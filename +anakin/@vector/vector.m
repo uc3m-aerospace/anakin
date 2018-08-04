@@ -13,13 +13,13 @@ subtracted, dotted, crossed, compared, etc.
 METHODS:
 * components: returns the components of the vector in a chosen basis
 * x,y,z: returns individual components in a chosen basis
-* isunitary, isperpendicular, isparallel: checks for the corresponding
-  property and returns true or false    
-* magnitude, dir: returns the magnitude and unit vector of a vector
+* dir, magnitude: returns the unit vector and  magnitude of a vector
 * dt: returns the time derivative of a vector wrt a chosen basis
   (symbolic variables must be used)  
 * subs: takes values of the symbolic unknowns and returns a vector with
   purely numeric coordinates (symbolic variables must be used)   
+* isunitary, isperpendicular, isparallel: checks for the corresponding
+  property and returns true or false    
 * plot: plots the vector with quiver, at a chosen position
 
 MMM20180802
@@ -28,39 +28,43 @@ classdef vector
     properties (Hidden = true, Access = protected) 
         c = [0;0;0]; % components of the vector in the canonical vector basis
     end 
-    methods           
-        function a = vector(varargin) % creator 
+    methods % creation
+        function a = vector(varargin) % creator
             switch nargin
-                case 0 % no arguments: use defaults
+                case 0 % no arguments
                     return;
-                case 1 % argument is: components in column vector in the canonical vector basis
-                    if isa(varargin{1},'anakin.vector') % catch case where vector is called with a vector already
-                        a = varargin{1};
-                    else % input is a column array
+                case 1
+                    if isa(varargin{1},'anakin.vector') % vector
+                        a.c = varargin{1}.c;
+                    else % column
                         a.c = varargin{1};
                     end
-                case 2 % arguments are: components in column vector, basis B
-                    a.c = varargin{2}.matrix * reshape(varargin{1},3,1);
-                case 3 % arguments are: x, y, z
+                case 2 
+                    if isa(varargin{1},'anakin.vector') % relative vector, basis
+                        a.c = varargin{2}.matrix * varargin{1}.c;
+                    else % relative column, basis
+                        a.c = varargin{2}.matrix * reshape(varargin{1},3,1);
+                    end
+                case 3 % x, y, z
                     a.c = [varargin{1};varargin{2};varargin{3}];
-                case 4 % arguments are: x, y, z, basis B 
+                case 4 % relative x, relative y, relative z, basis
                     a.c = varargin{4}.matrix * [varargin{1};varargin{2};varargin{3}];
                 otherwise % other possibilities are not allowed
                     error('Wrong number of arguments in vector');
             end       
         end
-        function a = set.c(a,value)
+        function a = set.c(a,value) % on setting c
             a.c = reshape(value,3,1); % Force column 
             if isa(a.c,'sym') % symbolic input
                 a.c = formula(simplify(a.c)); % simplify and force sym rather than symfun to allow indexing into c
             end
         end
     end
-    methods 
-        function a = plus(a,b) % overloaded + operator 
+    methods % overloads
+        function a = plus(a,b) % overloaded + operator
             a.c = a.c + b.c; 
         end
-        function a = minus(a,b) % overloaded - operator 
+        function a = minus(a,b) % overloaded - operator
             a.c = a.c - b.c; 
         end 
         function a = uplus(a) % overloaded + operator (unitary)
@@ -70,17 +74,17 @@ classdef vector
             a.c = -a.c; 
         end 
         function a = times(a,b) % overloaded .* (multiplication by scalar)
-            if isa(a,'anakin.vector') % then b is scalar
+            if isa(a,'anakin.vector') % then b is not vector
                 a.c = a.c.*b; 
-            else 
+            else % a is not vector
                 b.c = a.*b.c; 
                 a = b;
             end                
         end
         function a = mtimes(a,b) % overloaded * (multiplication by scalar or matrix)
-            if isa(a,'anakin.vector') % then b is scalar or matrix
+            if isa(a,'anakin.vector') % then b is not vector
                 a.c = a.c*b; 
-            else 
+            else % a is not vector
                 b.c = a*b.c; 
                 a = b;
             end
@@ -123,16 +127,8 @@ classdef vector
         function value = cross(a,b) % cross product
             value = anakin.vector(cross(a.c,b.c)); 
         end        
-    end
-    methods
-        function dir = dir(a) % returns unit vector along a
-            dir = a/norm(a);
-        end
-        function magnitude = magnitude(a) % returns magnitude of a (alias for norm)
-            magnitude = norm(a);
-        end
-    end
-    methods        
+    end 
+    methods % functionality
         function components = components(a,B) % return column of components of a in basis B
             if ~exist('B','var')
                 components = a.c; % if no basis is given, use the canonical vector basis
@@ -144,29 +140,32 @@ classdef vector
                 components = simplify(components);
             end
         end
-        function x = x(a,B) % returns a single component in basis B
+        function x = x(a,B) % returns single component x in basis B
             if ~exist('B','var')
                 B = anakin.basis; % canonical vector basis
             end
             components = a.components(B);
             x = components(1);
         end
-        function y = y(a,B)
+        function y = y(a,B) % returns single component y in basis B
             if ~exist('B','var')
                 B = anakin.basis; % canonical vector basis
             end
             components = a.components(B);
             y = components(2);
         end
-        function z = z(a,B)
+        function z = z(a,B) % returns single component z in basis B
             if ~exist('B','var')
                 B = anakin.basis; % canonical vector basis
             end
             components = a.components(B);
             z = components(3);
         end 
-        function a_ = subs(a,variables,values) % particularize symbolic vector
-            a_ = anakin.vector(double(subs(a.c,variables,values)));
+        function dir = dir(a) % returns unit vector along a
+            dir = a/norm(a);
+        end
+        function magnitude = magnitude(a) % returns magnitude of a (alias for norm)
+            magnitude = norm(a);
         end
         function da = dt(a,B) % time derivative with respect to basis B. Requires sym vector that utlimately depends on a single variable t
             if ~exist('B','var')
@@ -174,8 +173,12 @@ classdef vector
             end
             da = anakin.vector(diff(sym(a.components(B)),1),B);
         end
+        function a_ = subs(a,variables,values) % particularize symbolic vector
+            a_ = a;
+            a_.c = double(subs(a.c,variables,values));
+        end
     end
-    methods
+    methods % logical tests
         function isunitary = isunitary(a) % vector is unitary
             isunitary = (dot(a,a)==1);
             if isa(isunitary,'sym')
@@ -195,7 +198,7 @@ classdef vector
             end
         end     
     end
-    methods
+    methods % plotting
         function h = plot(v,varargin) % plot. First argument in varargin must be the O vector, if any
             if mod(nargin,2) == 1 % no origin vector is given
                 O = anakin.vector; % null vector

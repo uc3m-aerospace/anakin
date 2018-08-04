@@ -82,15 +82,16 @@ function test_overloads(~) % overloaded operators
     assert(S1~=S2);
 end
 
-function test_velaccel(~) % Call velocity and acceleration wrt canonical reference frame
+function test_posvelaccel(~) % Call position, velocity and acceleration wrt canonical reference frame
     import anakin.*
     syms t;
     syms theta(t) xi(t);
     assume([in(t, 'real'), in(theta(t), 'real'), in(xi(t), 'real')]);    
-    O = vector([xi(t),0,0]);
+    O = point([xi(t),0,0]);
     B = basis([cos(theta),-sin(theta),0; sin(theta),cos(theta),0; 0,0,1]);
     S = frame(O,B); 
     
+    assert(S.pos == vector([ xi;0;0]));
     assert(S.vel == vector([ diff(xi(t), 1);0;0]));
     assert(S.accel == vector([ diff(xi(t), 2);0;0]));
 end
@@ -122,6 +123,13 @@ function test_omegaalpha2(~) % Call angular velocity, angular acceleration wrt a
      
     assert(S2.omega(S1) == vector([ 0;0; diff(theta(t), 1)],B1));
     assert(S2.alpha(S1) == vector([ 0;0; diff(theta(t), 2)],B1));
+end
+
+function test_origin(~) % origin point
+    import anakin.*
+    S = frame(1,2,3);
+    
+    origin = S.origin;
 end
 
 function test_subs(~) % subs

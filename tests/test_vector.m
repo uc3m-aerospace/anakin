@@ -27,12 +27,12 @@ function test_creator2(~) % Call creator with numeric arguments
     import anakin.*
     B1 = basis([0,1,0;-1,0,0;0,0,1]); 
     
-    a = vector([1;2;0]); % coordinates in canonical vector basis, column array form
-    a = vector([1,2,0]); % coordinates in canonical vector basis, row array form    
-    a = vector([1;2;0],B1); % coordinates in another basis, column array form
-    a = vector([1,2,0],B1); % coordinates in another basis, row array form    
-    a = vector(1,2,0); % coordinates in canonical vector basis, independently given
-    a = vector(1,2,0,B1); % coordinates in another basis, independently given
+    a = vector([1;2;0]); % components in canonical vector basis, column array form
+    a = vector([1,2,0]); % components in canonical vector basis, row array form    
+    a = vector([1;2;0],B1); % components in another basis, column array form
+    a = vector([1,2,0],B1); % components in another basis, row array form    
+    a = vector(1,2,0); % components in canonical vector basis, independently given
+    a = vector(1,2,0,B1); % components in another basis, independently given
 end
 
 function test_creator3(~) % Call creator with arguments of type sym
@@ -42,12 +42,12 @@ function test_creator3(~) % Call creator with arguments of type sym
     assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);
     B1 = basis([1,0,0;0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]);
     
-    a = vector([cos(theta);sin(theta);0]); % coordinates in canonical vector basis, column array form
-    a = vector([cos(theta),sin(theta),0]); % coordinates in canonical vector basis, row array form
-    a = vector([cos(theta);sin(theta);0],B1); % coordinates in another basis, column array form
-    a = vector([cos(theta),sin(theta),0],B1); % coordinates in another basis, row array form
-    a = vector(cos(theta),sin(theta),0); % coordinates in canonical vector basis, independently given
-    a = vector(cos(theta),sin(theta),0,B1); % coordinates in another basis, independently given
+    a = vector([cos(theta);sin(theta);0]); % components in canonical vector basis, column array form
+    a = vector([cos(theta),sin(theta),0]); % components in canonical vector basis, row array form
+    a = vector([cos(theta);sin(theta);0],B1); % components in another basis, column array form
+    a = vector([cos(theta),sin(theta),0],B1); % components in another basis, row array form
+    a = vector(cos(theta),sin(theta),0); % components in canonical vector basis, independently given
+    a = vector(cos(theta),sin(theta),0,B1); % components in another basis, independently given
 end
 
 function test_components(~) % Call components, x,y,z
