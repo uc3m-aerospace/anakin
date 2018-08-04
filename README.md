@@ -1,6 +1,6 @@
 # Anakin
 
-**Anakin** (Aerospace eNgineering Assistant for Kinematics, Inertia and dyNamics)
+**Anakin** (Aerospace eNgineer's Assistant for Kinematics, Inertia and dyNamics)
 is a Matlab framework that defines a number of classes to facilitate modeling and
 solving Classical Mechanics problems in Aerospace Engineering and other disciplines.
 
