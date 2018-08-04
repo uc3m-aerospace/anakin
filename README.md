@@ -4,6 +4,8 @@
 is a Matlab framework that defines a number of classes to facilitate modeling and
 solving Classical Mechanics problems in Aerospace Engineering and other disciplines.
 
+![Anakin logo](docs/anakin-logo.png)
+
 ## Installation
 
 Installation requires simply that you
