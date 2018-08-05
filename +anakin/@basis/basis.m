@@ -88,7 +88,7 @@ classdef basis
             if isa(B1.m,'sym') || isa(B1.m,'sym') % symbolic inputs
                 value = isAlways(B1.m==B2.m,'Unknown','false'); % In case of doubt, false
             else % numeric input
-                value = (abs(B1.m - B2.m)<eps(B1.m)+eps(B2.m)); 
+                value = (abs(B1.m - B2.m)<eps(max(B1.m(:)))+eps(max(B2.m(:)))); 
             end
             value = all(value(:));
         end

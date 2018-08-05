@@ -105,7 +105,7 @@ classdef vector
             if isa(a.c,'sym') || isa(b.c,'sym') % symbolic inputs
                 value = isAlways(a.c==b.c,'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                value = (abs(a.c - b.c)<eps(a.c)+eps(b.c)); 
+                value = (abs(a.c - b.c)<eps(max(a.c(:)))+eps(max(b.c(:)))); 
             end
             value = all(value(:));
         end
