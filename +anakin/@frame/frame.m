@@ -1,15 +1,20 @@
 %{
-frame: class to define reference frames
+frame: class to define orthogonal, right-handed reference frames
 
-A frame can be created by passing a origin point and a vector basis with respect
-to the canonical reference frame S0. Alternatively, a relative origin point
-poisition, a relative basis vector basis and a different reference frame can be
-given. Called without arguments, frame returns the canonical reference frame S0.   
-This class inherits from point and basis.
+The class constructor accepts the following call types:
+- S0 = anakin.frame(); % where: S0 is the canonical reference frame
+- S = anakin.frame(S); % (convert to frame class)
+- S = anakin.frame(O); % where: O is a vector that denotes the origin
+                       % from the origin of S0
+- S = anakin.frame(c); % where: c is column coordinates of origin from
+                       % the origin of S0
+- S = anakin.frame(B); % where: B is a basis  
+- S = anakin.frame(m); % where: m is the rotation matrix from S0 to S
+- S = anakin.frame(O,B); 
+- S = anakin.frame(c,B); 
+- S = anakin.frame(O,m); 
+- S = anakin.frame(c,m); 
 
-Equality and non-equality operators have been overloaded to apply to
-frames too.
- 
 METHODS:
 * origin: returns the origin point
 * subs: takes values of the symbolic unknowns and returns a reference frame with
@@ -20,7 +25,7 @@ MMM20180802
 %}
 classdef frame < anakin.point & anakin.basis % Inherit from point and basis 
     methods % creation
-        function S = frame(varargin) % creator
+        function S = frame(varargin) % constructor
             switch nargin
                 case 0 % no arguments
                     return;

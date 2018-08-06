@@ -25,7 +25,7 @@ end
 
 function test_creator2(~) % Call creator with numeric arguments
     import anakin.*
-    B1 = basis([0,1,0;-1,0,0;0,0,1]); 
+    B1 = basis([0,-1,0],[0,1,0],[0,0,1]); 
     
     a = vector([1;2;0]); % components in canonical vector basis, column array form
     a = vector([1,2,0]); % components in canonical vector basis, row array form    
@@ -40,7 +40,7 @@ function test_creator3(~) % Call creator with arguments of type sym
     syms t;
     syms theta(t) phi(t);
     assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);
-    B1 = basis([1,0,0;0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]);
+    B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]);
     
     a = vector([cos(theta);sin(theta);0]); % components in canonical vector basis, column array form
     a = vector([cos(theta),sin(theta),0]); % components in canonical vector basis, row array form
@@ -55,7 +55,7 @@ function test_components(~) % Call components, x,y,z
     syms t;
     syms theta(t) phi(t);
     assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);
-    B1 = basis([1,0,0;0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]);    
+    B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]);        
     a = vector([cos(theta),sin(theta),0],B1);  
     
     assert(isAlways(all(a.components(B1) == [cos(theta);sin(theta);0])));
@@ -116,7 +116,7 @@ function test_timediff(~) % Time derivative wrt a given basis calling dt
     syms theta(t) phi(t);
     assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);
     B0 = basis;
-    B1 = basis([1,0,0;0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]);    
+    B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]);    
     a = vector([cos(theta),sin(theta),0],B1); 
     
     assert(a.dt(B1) == vector(diff(theta,1)*[-sin(theta),cos(theta),0],B1)); % time derivative of a wrt B1

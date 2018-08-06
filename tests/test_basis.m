@@ -29,21 +29,21 @@ function test_creator2(~) % Call creator with arguments
     syms theta(t);
     assume([in(t, 'real'), in(theta(t), 'real')]);
     
-    B = basis(basis); % repetition
-    B = basis([1,0,0;0,cos(theta),-sin(theta);0,sin(theta),cos(theta)]); % with matrix
+    B = basis(basis); % repetition 
     B = basis(vector([cos(theta),sin(theta),0]),vector([-sin(theta),cos(theta),0]),vector([0;0;1])); % with vectors
     B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]); % with arrays 
     B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1],basis); % with arrays and specifying basis
 end
 
-function test_isproper(~) % Call isproper
+function test_logicals(~) % Call logical methods
     import anakin.*
     syms t;
     syms theta(t);
     assume([in(t, 'real'), in(theta(t), 'real')]);
     B1 = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);
     
-    assert(B1.isproper)
+    assert(B1.isorthonormal)
+    assert(B1.isrighthanded)
 end
 
 function test_overloads(~)
@@ -54,10 +54,27 @@ function test_overloads(~)
     B1 = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);
     B2 = basis([cos(phi),sin(phi),0],[-sin(phi),cos(phi),0],[0;0;1]);
     B3 = basis([cos(theta+phi),sin(theta+phi),0],[-sin(theta+phi),cos(theta+phi),0],[0;0;1]);
+    B3b = basis([cos(phi),sin(phi),0],[-sin(phi),cos(phi),0],[0;0;1],B1); 
     
-    B3b = B2*B1;
     assert(B1~=B2)
     assert(B3==B3b)    
+end
+
+function test_representations(~)
+    import anakin.*
+    syms t;
+    syms theta(t) phi(t);
+    assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);   
+    theta = pi/6;
+    B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);     
+    
+    B.matrix;
+    B.i.components;
+    B.j.components;
+    B.k.components;
+    B.axis.components;
+    B.angle;
+    B.quaternions;
 end
 
 function test_omegaalpha(~) % Call angular velocity and acceleration wrt canonical vector basis

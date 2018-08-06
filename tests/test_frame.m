@@ -33,34 +33,28 @@ function test_creator2(~) % Call creator with arguments
     j = vector([-sin(theta),cos(theta),0]);
     k = vector([0,0,1]);
     matrix = formula([cos(theta),-sin(theta),0; sin(theta),cos(theta),0; 0,0,1]);
-    B = basis(matrix); 
+    B = basis(i,j,k); 
     S1 = frame;
     
     S = frame(frame); % repetition    
     S = frame(O); % origin         
     S = frame(B); % basis
-    S = frame([1,2,3]); % origin components
-    S = frame(matrix); % basis matrix
+    S = frame([1,2,3]); % origin components 
     
     S = frame(O,B); % origin, basis. THIS IS THE RECOMMENDED WAY TO CREATE A FRAME
-    S = frame([1,2,3],S1); % relative components of origin and frame
-    S = frame(matrix,S1); % relative basis matrix and frame
+    S = frame([1,2,3],S1); % relative components of origin and frame 
     
     S = frame(1,2,3); % x y z
     S = frame(i,j,k); % i j k
-    S = frame([1,2,3],B,S1); % relative origin components, basis, frame
-    S = frame(O,matrix,S1); % origin, relative basis matrix, frame
-    S = frame([1,2,3],matrix,S1); % relative origin components, relative basis matrix, frame
+    S = frame([1,2,3],B,S1); % relative origin components, basis, frame  
     
     S = frame(O,i,j,k); % origin, ijk
     S = frame([1,2,3],i,j,k); % origin components, ijk
-    S = frame(1,2,3,B); % xyz, basis
-    S = frame(1,2,3,matrix); % xyz, basis matrix
+    S = frame(1,2,3,B); % xyz, basis 
     S = frame(1,2,3,S1); % xyz, frame
     S = frame(i,j,k,S1); % ijk, frame
     
-    S = frame(1,2,3,B,S1); % xyz, basis, frame
-    S = frame(1,2,3,matrix,S1); % xyz, basis matrix,frame    
+    S = frame(1,2,3,B,S1); % xyz, basis, frame 
     S = frame([1,2,3],i,j,k); % origin components, ijk, frame 
     
     S = frame(1,2,3,i,j,k,S1); % xyz, ijk, frame        
@@ -73,8 +67,8 @@ function test_overloads(~) % overloaded operators
     assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real'), in(xi(t), 'real'), in(eta(t), 'real')]);    
     O1 = vector([xi(t),0,0]);
     O2 = vector([eta(t),xi(t)*eta(t),0]) + O1; % defined wrt O1
-    B1 = basis([1,0,0; 0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]); 
-    B2 = basis([cos(theta),-sin(theta),0; sin(theta),cos(theta),0; 0,0,1],B1); % defined wrt B1
+    B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]); 
+    B2 = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1],B1);     
     S1 = frame(O1,B1);
     S2 = frame(O2,B2);
 
@@ -87,8 +81,8 @@ function test_posvelaccel(~) % Call position, velocity and acceleration wrt cano
     syms t;
     syms theta(t) xi(t);
     assume([in(t, 'real'), in(theta(t), 'real'), in(xi(t), 'real')]);    
-    O = point([xi(t),0,0]);
-    B = basis([cos(theta),-sin(theta),0; sin(theta),cos(theta),0; 0,0,1]);
+    O = point([xi(t),0,0]); 
+    B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);         
     S = frame(O,B); 
     
     assert(S.pos == vector([ xi;0;0]));
@@ -102,7 +96,7 @@ function test_omegaalpha(~) % Call angular velocity and acceleration wrt canonic
     syms theta(t) xi(t);
     assume([in(t, 'real'), in(theta(t), 'real'), in(xi(t), 'real')]);    
     O = vector([xi(t),0,0]);
-    B = basis([cos(theta),-sin(theta),0; sin(theta),cos(theta),0; 0,0,1]);
+    B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);
     S = frame(O,B); 
     
     assert(S.omega == vector([ 0;0; diff(theta(t), 1)]));
@@ -116,8 +110,8 @@ function test_omegaalpha2(~) % Call angular velocity, angular acceleration wrt a
     assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real'), in(xi(t), 'real'), in(eta(t), 'real')]);    
     O1 = vector([xi(t),0,0]);
     O2 = vector([eta(t),xi(t)*eta(t),0]) + O1; % defined wrt O1
-    B1 = basis([1,0,0; 0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]); 
-    B2 = basis([cos(theta),-sin(theta),0; sin(theta),cos(theta),0; 0,0,1],B1); % defined wrt B1
+    B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]); 
+    B2 = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1],B1); % defined wrt B1
     S1 = frame(O1,B1);
     S2 = frame(O2,B2);
      
@@ -138,7 +132,7 @@ function test_subs(~) % subs
     syms phi(t) xi(t);
     assume([in(t, 'real'), in(phi(t), 'real'), in(xi(t), 'real')]);    
     O1 = vector([xi(t),0,0]); 
-    B1 = basis([1,0,0; 0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]);  
+    B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]);
     S1 = frame(O1,B1); 
      
     S1_ = S1.subs({t,phi,xi},{2,2*t,3*t});

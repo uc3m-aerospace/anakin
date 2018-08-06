@@ -19,7 +19,7 @@ MMM20180802
 %}
 classdef point < anakin.vector 
     methods % creation
-        function P = point(varargin) % creator
+        function P = point(varargin) % constructor
             switch nargin
                 case 0 % no arguments
                     return;

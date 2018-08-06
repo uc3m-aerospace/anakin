@@ -1,68 +1,65 @@
 %{
-basis: class to define vector bases.
+basis: class to define orthonormal, right-handed vector bases.
 
-A basis can be created by passing the transformation matrix or the
-vectors of the basis. By default, the code assumes the canonical vector
-basis B0 is being used in the definition. Optionally, a different basis
-for the definition can be given as a last argument. Called without
-arguments, basis returns the canonical vector basis B0.
+The class constructor accepts the following call types:
+- B0 = anakin.basis(); % where: B0 is the canonical vector basis
+- B = anakin.basis(B); % (convert to basis class)
+- B = anakin.basis(m); % where: m is rotation matrix from B0 to B
+- B = anakin.basis(m,B1); % where: m is relative rotation matrix from B1
+                          % to B 
+- B = anakin.basis(i,j,k); % where: i,j,k are vector objects
+- B = anakin.basis(ic,jc,kc); % where: ic,jc,kc are column components in
+                              % B0
+- B = anakin.basis(ric,rjc,rkc,B1); % where: ric,rjc, rkc are relative
+                                    % column components, and B1 is a
+                                    % vector basis  
   
-Common operators have been overloaded so that bases multiplied or
-compared. 
-
 METHODS:
 * matrix: transformation matrix to another basis 
 * i,j,k: returns the vectors of the basis (with respect to a chosen
   basis) 
+* axis, angle: returns unit vector and angle of rotation of B wrt B1
+* quaternions: returns the quaternions with respect to another basis
 * rotatex,rotatey,rotatez: create simply rotated frame about one
   coordinated axis of another basis
-* omega: returns the angular velocity vector omega with respect to
-  another basis (symbolic variables must be used)
-* alpha: returns the angular acceleration vector alpha with respect to
-  another basis (symbolic variables must be used)
+* omega, alpha: returns the angular velocity/acceleration vector omega
+  with respect to another basis (symbolic variables must be used)
 * subs: takes values of the symbolic unknowns and returns a basis with
   purely numeric matrix (symbolic variables must be used)    
 * isorthonormal, isrighthanded: checks the corresponding property and
   returns true or false  
-* isproper: isorthonormal && isrighthanded
 * plot: plots the basis with quiver, at a chosen position
 
 MMM20180802
 %}
 classdef basis
     properties (Hidden = true, Access = protected)        
-        m = [1,0,0;0,1,0;0,0,1]; % transformation matrix to the canonical vector basis   
+        m = [1,0,0;0,1,0;0,0,1]; % transformation matrix: [a(in B0)] = m * [a(in B)]. Or equivalently: the rotation matrix to go from B0 to B
     end 
     methods % creation
-        function B = basis(varargin) % creator
+        function B = basis(varargin) % constructor
             switch nargin
                 case 0 % no arguments 
-                    return;
-                case 1 
+                    return; 
+                case 1
                     if isa(varargin{1},'anakin.basis') % basis
                         B.m = varargin{1}.m;
                     else % matrix
                         B.m = varargin{1};
                     end
-                case 2 
-                    if isa(varargin{1},'anakin.basis') % relative basis, basis
-                        B.m = varargin{2}.m * varargin{1}.m;
-                    else % relative matrix, basis
-                        B.m = varargin{2}.m * varargin{1};
-                    end
-                case 3 % i,j,k (vectors or columns)
-                    i = anakin.vector(varargin{1}); % ensure vector
-                    j = anakin.vector(varargin{2});
-                    k = anakin.vector(varargin{3});
-                    B.m = [i.components,j.components,k.components];
-                case 4 % relative i,j,k (vectors or columns) and basis
-                    i = anakin.vector(varargin{1},varargin{4});
-                    j = anakin.vector(varargin{2},varargin{4});
-                    k = anakin.vector(varargin{3},varargin{4});
-                    B.m = [i.components,j.components,k.components];
-                otherwise % other possibilities are not allowed
+                case 2 % relative matrix, basis
+                    B.m = varargin{2}.m * varargin{1};                     
+                case 3 % i,j,k (vectors or component columns)
+                    B.m = [anakin.vector(varargin{1}).components,...
+                           anakin.vector(varargin{2}).components,...
+                           anakin.vector(varargin{3}).components];
+                case 4 % relative i,j,k (component columns) and basis
+                    B.m = [anakin.vector(varargin{1},varargin{4}).components,...
+                           anakin.vector(varargin{2},varargin{4}).components,...
+                           anakin.vector(varargin{3},varargin{4}).components];
+                otherwise
                     error('Wrong number of arguments in basis');
-            end     
+            end  
         end 
         function B = set.m(B,value) % on setting m
             B.m = reshape(value,3,3);
@@ -72,23 +69,11 @@ classdef basis
         end     
     end
     methods % overloads 
-        function B3 = mtimes(B1,B2) % overloaded * (multiplication of two bases)
-            B3 = B1;
-            B3.m = B1.m * B2.m;
-        end 
-        function B3 = mrdivide(B1,B2) % overloaded /
-            B3 = B1;
-            B3.m = B1.m / B2.m;
-        end 
-        function B3 = mldivide(B1,B2) % overloaded \
-            B3 = B1;
-            B3.m = B1.m \ B2.m;
-        end 
         function value = eq(B1,B2) % overload ==
             if isa(B1.m,'sym') || isa(B1.m,'sym') % symbolic inputs
                 value = isAlways(B1.m==B2.m,'Unknown','false'); % In case of doubt, false
             else % numeric input
-                value = (abs(B1.m - B2.m)<eps(max(B1.m(:)))+eps(max(B2.m(:)))); 
+                value = (abs(B1.m - B2.m)<eps(max(abs(B1.m(:))))+eps(max(abs(B2.m(:))))); 
             end
             value = all(value(:));
         end
@@ -97,7 +82,7 @@ classdef basis
         end
     end
     methods % functionality
-        function matrix = matrix(B,B1) % transformation matrix to another basis
+        function matrix = matrix(B,B1) % transformation matrix to another basis: [a(in B1)] = m * [a(in B)]
             if ~exist('B1','var')
                 matrix = B.m; % if no basis is given, use the canonical vector basis
             else
@@ -116,6 +101,48 @@ classdef basis
         function k = k(B) % vector k of the basis
              k = anakin.vector([0;0;1],B);
         end 
+        function axis = axis(B,B1) % rotation axis unit vector from B1
+            if ~exist('B1','var')
+                B1 = anakin.basis; % if no basis is given, use the canonical vector basis
+            end
+            mm = B.matrix(B1);
+            axis = anakin.vector([mm(2,3)-mm(3,2);mm(3,1)-mm(1,3);mm(1,2)-mm(2,1)],B1).dir; % fails if rotation angle is 0 or 180 deg
+        end 
+        function angle = angle(B,B1) % angle of rotation from B1
+            if ~exist('B1','var')
+                B1 = anakin.basis; % if no basis is given, use the canonical vector basis
+            end
+            mm = B.matrix(B1);
+            angle = acos((trace(mm)-1)/2);
+            if isa(angle,'sym') % symbolic input
+                angle = formula(simplify(angle)); % simplify and force sym rather than symfun
+            end
+
+        end
+        function quaternions = quaternions(B,B1) % quaternions of rotation from B1. Fails when rotation angle is 180 deg
+            if ~exist('B1','var')
+                B1 = anakin.basis; % if no basis is given, use the canonical vector basis
+            end
+            mm = B.matrix(B1);
+            quaternions(4) = sqrt(trace(mm)+1)/2; % scalar term q4
+            quaternions(1) = -(mm(2,3)-mm(3,2))/(4*quaternions(4)); % q1
+            quaternions(2) = -(mm(3,1)-mm(1,3))/(4*quaternions(4)); % q2
+            quaternions(3) = -(mm(1,2)-mm(2,1))/(4*quaternions(4)); % q3
+            quaternions = reshape(quaternions,4,1); % Force column
+            if isa(quaternions,'sym') % symbolic input
+                quaternions = formula(simplify(quaternions)); % simplify and force sym rather than symfun to allow indexing
+            end
+        end
+        function euler = euler(B,type,B1) % Euler angles of rotation from B1. Fails depending on the value of the intermediate angle: symmetric Euler angles fail for theta2 = 0,180 deg. Asymmetric Euler angles fail for theta2 = 90,270 deg 
+            % type: a text string like '313' or '123' indicating the
+            % intrinsic axes of rotation
+            if ~exist('B1','var')
+                B1 = anakin.basis; % if no basis is given, use the canonical vector basis
+            end
+            tbi(B,type,B1);
+            euler = 'to be implemented';
+            error(euler);
+        end
         function Bx = rotatex(B,angle) % returns rotated basis about x axis of B by angle
             Bx = B;
             Bx.m = B.m * [1,0,0;0,cos(angle),-sin(angle);0,sin(angle),cos(angle)];            
@@ -158,10 +185,7 @@ classdef basis
             if isa(isrighthanded,'sym')
                 isrighthanded = isAlways(isrighthanded,'Unknown','false'); % In case of doubt, false
             end
-        end  
-        function isproper = isproper(B) % orthonormal and righthanded
-            isproper = B.isorthonormal && B.isrighthanded;
-        end    
+        end   
     end
     methods % plotting
         function h = plot(B,varargin) % plot. First argument in varargin must be the O vector, if any

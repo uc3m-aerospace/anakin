@@ -1,14 +1,15 @@
 %{
-vector: class to define a 3-vector.
+vector: class to define physical 3-vectors.
 
-A vector can be created by passing coordinates as a column array or as
-three independent values. By default, the code assumes the canonical
-vector basis B0 is being used in the definition. Optionally, a different
-basis for the definition can be given as a last argument. Called without
-arguments, the null vector is returned. 
-
-Common operators have been overloaded so that vectors can be added,
-subtracted, dotted, crossed, compared, etc.
+The class constructor accepts the following call types:
+- a0 = anakin.vector(); % where: a0 is the null vector
+- a = anakin.vector(a); % (convert to vector class)
+- a = anakin.basis(c); % where: c are column components in B0
+- a = anakin.basis(rc,B1); % where: rc are relative column components,
+                           % and B1 is a vector basis
+- a = anakin.basis(x,y,z); % where: x,y,z are components in B0
+- a = anakin.basis(rx,ry,rz,B1); % where: rx,rc,rz are relative column
+                                 %  components, and B1 is a vector basis
 
 METHODS:
 * components: returns the components of the vector in a chosen basis
@@ -29,16 +30,16 @@ classdef vector
         c = [0;0;0]; % components of the vector in the canonical vector basis
     end 
     methods % creation
-        function a = vector(varargin) % creator
+        function a = vector(varargin) % constructor
             switch nargin
                 case 0 % no arguments
                     return;
-                case 1
-                    if isa(varargin{1},'anakin.vector') % vector
+                case 1 
+                    if isa(varargin{1},'anakin.vector') % relative vector, basis
                         a.c = varargin{1}.c;
-                    else % column
-                        a.c = varargin{1};
-                    end
+                    else % relative column, basis
+                        a.c = anakin.vector(varargin{1},anakin.basis).c;  
+                    end 
                 case 2 
                     if isa(varargin{1},'anakin.vector') % relative vector, basis
                         a.c = varargin{2}.matrix * varargin{1}.c;
@@ -46,8 +47,8 @@ classdef vector
                         a.c = varargin{2}.matrix * reshape(varargin{1},3,1);
                     end
                 case 3 % x, y, z
-                    a.c = [varargin{1};varargin{2};varargin{3}];
-                case 4 % relative x, relative y, relative z, basis
+                    a.c = anakin.vector(varargin{1},varargin{2},varargin{3},anakin.basis).c;   
+                case 4 % relative x, relative y, relative z, basis 
                     a.c = varargin{4}.matrix * [varargin{1};varargin{2};varargin{3}];
                 otherwise % other possibilities are not allowed
                     error('Wrong number of arguments in vector');
@@ -105,7 +106,7 @@ classdef vector
             if isa(a.c,'sym') || isa(b.c,'sym') % symbolic inputs
                 value = isAlways(a.c==b.c,'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                value = (abs(a.c - b.c)<eps(max(a.c(:)))+eps(max(b.c(:)))); 
+                value = (abs(a.c - b.c)<eps(max(abs(a.c(:))))+eps(max(abs(b.c(:))))); 
             end
             value = all(value(:));
         end
@@ -118,15 +119,15 @@ classdef vector
                 value = formula(simplify(value)); % simplify and force sym rather than symfun to allow indexing
             end
         end
-        function value = norm(a) % 2 norm of a real vector
-            value = dot(a,a);
+        function value = norm(a) % 2-norm of a real vector
+            value = sqrt(dot(a,a));
             if isa(value,'sym')
                 value = formula(simplify(value)); % simplify and force sym rather than symfun to allow indexing
             end
         end
         function value = cross(a,b) % cross product
             value = anakin.vector(cross(a.c,b.c)); 
-        end        
+        end
     end 
     methods % functionality
         function components = components(a,B) % return column of components of a in basis B
