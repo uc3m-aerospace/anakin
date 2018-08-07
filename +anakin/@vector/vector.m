@@ -4,24 +4,22 @@ vector: class to define physical 3-vectors.
 The class constructor accepts the following call types:
 - a0 = anakin.vector(); % where: a0 is the null vector
 - a = anakin.vector(a); % (convert to vector class)
-- a = anakin.basis(c); % where: c are column components in B0
-- a = anakin.basis(rc,B1); % where: rc are relative column components,
-                           % and B1 is a vector basis
+- a = anakin.basis(c); % where: c are components in canonical basis B0
+- a = anakin.basis(rc,B1); % where: rc are relative components in B1 
 - a = anakin.basis(x,y,z); % where: x,y,z are components in B0
-- a = anakin.basis(rx,ry,rz,B1); % where: rx,rc,rz are relative column
-                                 %  components, and B1 is a vector basis
+- a = anakin.basis(rx,ry,rz,B1); % where: rx,rc,rz are relative components
 
 METHODS:
 * components: returns the components of the vector in a chosen basis
 * x,y,z: returns individual components in a chosen basis
 * dir, magnitude: returns the unit vector and  magnitude of a vector
+* isunitary, isperpendicular, isparallel: checks for the corresponding
+  property and returns true or false    
+* plot: plots the vector with quiver, at a chosen position
 * dt: returns the time derivative of a vector wrt a chosen basis
   (symbolic variables must be used)  
 * subs: takes values of the symbolic unknowns and returns a vector with
   purely numeric coordinates (symbolic variables must be used)   
-* isunitary, isperpendicular, isparallel: checks for the corresponding
-  property and returns true or false    
-* plot: plots the vector with quiver, at a chosen position
 
 MMM20180802
 %}
@@ -62,6 +60,17 @@ classdef vector
         end
     end
     methods % overloads
+        function value = eq(a,b) % overload ==
+            if isa(a.c,'sym') || isa(b.c,'sym') % symbolic inputs
+                value = isAlways(a.c==b.c,'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                value = (abs(a.c - b.c)<eps(max(abs(a.c(:))))+eps(max(abs(b.c(:))))); 
+            end
+            value = all(value(:));
+        end
+        function value = ne(a,b) % overload ~=
+            value = ~eq(a,b);
+        end
         function a = plus(a,b) % overloaded + operator
             a.c = a.c + b.c; 
         end
@@ -101,17 +110,6 @@ classdef vector
         end
         function a = mldivide(x,a) % overloaded \ (division by scalar or matrix)
             a.c = x\a.c; 
-        end
-        function value = eq(a,b) % overload ==
-            if isa(a.c,'sym') || isa(b.c,'sym') % symbolic inputs
-                value = isAlways(a.c==b.c,'Unknown','false'); % In case of doubt, false
-            else % numeric input            
-                value = (abs(a.c - b.c)<eps(max(abs(a.c(:))))+eps(max(abs(b.c(:))))); 
-            end
-            value = all(value(:));
-        end
-        function value = ne(a,b) % overload ~=
-            value = ~eq(a,b);
         end
         function value = dot(a,b) % dot product of two real vectors
             value = dot(a.c,b.c);
@@ -168,6 +166,8 @@ classdef vector
         function magnitude = magnitude(a) % returns magnitude of a (alias for norm)
             magnitude = norm(a);
         end
+    end
+    methods % symbolic
         function da = dt(a,B) % time derivative with respect to basis B. Requires sym vector that utlimately depends on a single variable t
             if ~exist('B','var')
                 B = anakin.basis; % canonical vector basis
