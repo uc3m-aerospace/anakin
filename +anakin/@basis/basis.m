@@ -17,7 +17,8 @@ METHODS:
 * matrix: transformation matrix to another basis 
 * i,j,k: returns the vectors of the basis (with respect to a chosen
   basis) 
-* axis, angle: returns unit vector and angle of rotation of B wrt B1
+* rotaxis, rotangle: returns unit vector and angle of rotation of B wrt
+  B1 
 * quaternions: returns the quaternions with respect to another basis
 * euler: returns the euler angles (of a chosen type) with respect to
   another basis
@@ -174,14 +175,14 @@ classdef basis
         function k = k(B) % vector k of the basis
              k = anakin.vector([0;0;1],B);
         end 
-        function axis = axis(B,B1) % rotation axis unit vector from B1
+        function axis = rotaxis(B,B1) % rotation axis unit vector from B1
             if ~exist('B1','var')
                 B1 = anakin.basis; % if no basis is given, use the canonical vector basis
             end
             mm = B.matrix(B1);
             axis = anakin.vector([mm(3,2)-mm(2,3);mm(1,3)-mm(3,1);mm(2,1)-mm(1,2)],B1).dir; % fails if rotation angle is 0 or 180 deg
         end 
-        function angle = angle(B,B1) % angle of rotation from B1
+        function angle = rotangle(B,B1) % angle of rotation from B1
             if ~exist('B1','var')
                 B1 = anakin.basis; % if no basis is given, use the canonical vector basis
             end

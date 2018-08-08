@@ -1,22 +1,26 @@
 %{
-frame: class to define orthogonal, right-handed reference frames
+frame: class to define orthogonal, right-handed reference frames.
+Inherits from point and basis.
 
 The class constructor accepts the following call types:
-- S0 = anakin.frame(); % where: S0 is the canonical reference frame
-- S = anakin.frame(S); % (convert to frame class)
-- S = anakin.frame(O); % where: O is a vector that denotes the origin
-                       % from the origin of S0
-- S = anakin.frame(c); % where: c is column coordinates of origin from
-                       % the origin of S0
-- S = anakin.frame(B); % where: B is a basis  
-- S = anakin.frame(m); % where: m is the rotation matrix from S0 to S
-- S = anakin.frame(O,B); 
-- S = anakin.frame(c,B); 
-- S = anakin.frame(O,m); 
-- S = anakin.frame(c,m); 
+- S0 = anakin.frame(); % S0 is the canonical reference frame
+- S  = anakin.frame(S); % (convert to frame class)
+- S  = anakin.frame(a); % a is the origin vector/point from S0
+- S  = anakin.frame(ac); % components of a
+- S  = anakin.frame(ax,ay,az); % components of a
+- S  = anakin.frame(B); % B is the basis
+- S  = anakin.frame(m); % m is rotation matrix from B0 to B
+- S  = anakin.frame(q); % q are the rotation quaternions from B0 to B
+- S  = anakin.frame(axis,angle); % axis,angle are the rotation vector and angle from B0 to B
+- S  = anakin.frame(i,j,k); % i,j,k are the vectors of the basis
+- S  = anakin.frame(ic,jc,kc); % ic,jc,kc are column components in B0  
+- Any combination of inputs (first those of the origin, then the basis)
+Adding a frame S1 as a last argument understands all previous
+input as relative to that frame.
 
 METHODS:
 * origin: returns the origin point
+* basis: returns the basis
 * subs: takes values of the symbolic unknowns and returns a reference frame with
   purely numeric origin point and basis matrix (symbolic variables must be used)     
 * plot: plots the frame with quiver
@@ -26,62 +30,88 @@ MMM20180802
 classdef frame < anakin.point & anakin.basis % Inherit from point and basis 
     methods % creation
         function S = frame(varargin) % constructor
+            for i = 1:length(varargin)
+               if isa(varargin{i},'sym')
+                   varargin{i} = formula(varargin{i}); % enforce formula to allow indexing
+               end
+            end
             switch nargin
                 case 0 % no arguments
                     return;
                 case 1
-                    if isa(varargin{1},'anakin.frame') % frame
-                        S = varargin{1};
-                    elseif isa(varargin{1},'anakin.vector') || numel(varargin{1}) == 3 % vector or column
-                        S.c = anakin.vector(varargin{1}).c; 
-                    else % basis or matrix
-                        S.m = anakin.basis(varargin{1}).m;      
-                    end
+                    St = anakin.frame(varargin{1},anakin.frame);
+                    S.c = St.c;
+                    S.m = St.m;                     
                 case 2
-                    if isa(varargin{2},'anakin.frame') % last is frame
-                        if isa(varargin{1},'anakin.vector') || numel(varargin{1}) == 3 % (relative vector or relative column), frame
+                    if isa(varargin{end},'anakin.frame') % last is frame
+                        if isa(varargin{1},'anakin.frame') % relative frame, frame
+                            S.c = varargin{2}.m * varargin{1}.c + varargin{2}.c; 
+                            S.m = varargin{2}.m * varargin{1}.m; % copy basis from given frame 
+                        elseif isa(varargin{1},'anakin.vector') || numel(varargin{1}) == 3 % (relative vector or relative column), frame
                             S.c = varargin{2}.m * anakin.vector(varargin{1}).c + varargin{2}.c; 
                             S.m = varargin{2}.m; % copy basis from given frame 
                         else % (relative basis or relative matrix), frame
                             S.c = varargin{2}.c; % copy origin from given frame
                             S.m = varargin{2}.m * anakin.basis(varargin{1}).m;  
                         end
-                    else % (vector or column), (basis or matrix)
-                        S.c = anakin.vector(varargin{1}).c;
-                        S.m = anakin.basis(varargin{2}).m;
+                    else 
+                        St = anakin.frame(varargin{1},varargin{2},anakin.frame);
+                        S.c = St.c;
+                        S.m = St.m;
                     end
                 case 3 
-                    if isa(varargin{3},'anakin.frame') % (relative vector or relative column), (relative basis or relative matrix), frame 
-                        S.c = varargin{3}.m * anakin.vector(varargin{1}).c + varargin{3}.c;
-                        S.m = varargin{3}.m * anakin.basis(varargin{2}).m;                         
-                    elseif isa(varargin{3},'anakin.vector') || numel(varargin{3}) == 3 % i,j,k
-                        S.m = anakin.basis(varargin{1},varargin{2},varargin{3}).m;     
-                    else % x,y,z
-                        S.c = anakin.vector(varargin{1},varargin{2},varargin{3}).c; 
+                    if isa(varargin{end},'anakin.frame') % (relative vector or relative column), (relative basis or relative matrix), frame 
+                        if isa(varargin{2},'anakin.basis') || numel(varargin{2}) == 9 || numel(varargin{2}) == 4 % (vector or column), (basis, matrix or quaternions), frame
+                            S.c = varargin{3}.m * anakin.vector(varargin{1}).c + varargin{3}.c;
+                            S.m = varargin{3}.m * anakin.basis(varargin{2}).m;  
+                        else % axis, angle, frame
+                            S.c = varargin{3}.c;
+                            S.m = varargin{3}.m * anakin.basis(varargin{1},varargin{2}).m;  
+                        end
+                    else
+                        St = anakin.frame(varargin{1},varargin{2},varargin{3},anakin.frame);
+                        S.c = St.c;
+                        S.m = St.m;
                     end
                 case 4  
-                    if isa(varargin{4},'anakin.frame') % last is frame
-                        if isa(varargin{1},'anakin.vector') || numel(varargin{1}) == 3 % relative ijk (vectors or columns), frame                        
+                    if isa(varargin{end},'anakin.frame') % last is frame
+                        if isa(varargin{3},'anakin.vector') || numel(varargin{3}) == 3 % relative ijk (vectors or columns), frame                        
                             S.c = varargin{4}.c; % copy origin from given frame
                             S.m = varargin{4}.m * anakin.basis(varargin{1},varargin{2},varargin{3}).m;                    
+                        elseif isa(varargin{2},'anakin.vector') || numel(varargin{2}) == 3 % (vector or column), axis, angle, frame                        
+                            S.c = varargin{4}.m * anakin.vector(varargin{1}).c + varargin{4}.c; 
+                            S.m = varargin{4}.m * anakin.basis(varargin{2},varargin{3}).m;                                            
                         else % relative xyz, frame
                             S.c = varargin{4}.m * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{4}.c; 
                             S.m = varargin{4}.m; % copy basis from given frame
                         end
-                    elseif isa(varargin{4},'anakin.vector') || numel(varargin{4}) == 3 % (vector or column), ijk (vectors or columns)
-                        S.c = anakin.vector(varargin{1}).c;
-                        S.m = anakin.basis(varargin{2},varargin{3},varargin{4}).m;
-                    else % xyz, (basis or matrix)
-                        S.c = anakin.vector(varargin{1},varargin{2},varargin{3}).c;
-                        S.m = anakin.basis(varargin{4}).m; 
+                    else
+                        St = anakin.frame(varargin{1},varargin{2},varargin{3},varargin{4},anakin.frame);
+                        S.c = St.c;
+                        S.m = St.m;
                     end
                 case 5
-                    if isa(varargin{4},'anakin.basis') || numel(varargin{4}) == 9 % relative xyz, (relative basis or relative matrix), frame
-                        S.c = varargin{5}.m * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{5}.c;
-                        S.m = varargin{5}.m * anakin.basis(varargin{4}).m;
-                    else % (relative vector or relative column), relative ijk, frame
-                        S.c = varargin{5}.m * anakin.vector(varargin{1}).c + varargin{5}.c;
-                        S.m = varargin{5}.m * anakin.basis(varargin{2},varargin{3},varargin{4}).m; 
+                    if isa(varargin{end},'anakin.frame') % last is frame
+                        if isa(varargin{4},'anakin.basis') || numel(varargin{4}) == 9 || numel(varargin{4}) == 4 % relative xyz, (relative basis or relative matrix or quaternions), frame
+                            S.c = varargin{5}.m * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{5}.c;
+                            S.m = varargin{5}.m * anakin.basis(varargin{4}).m;
+                        else % (relative vector or relative column), relative ijk, frame
+                            S.c = varargin{5}.m * anakin.vector(varargin{1}).c + varargin{5}.c;
+                            S.m = varargin{5}.m * anakin.basis(varargin{2},varargin{3},varargin{4}).m; 
+                        end
+                    else
+                        St = anakin.frame(varargin{1},varargin{2},varargin{3},varargin{4},varargin{5},anakin.frame);
+                        S.c = St.c;
+                        S.m = St.m;
+                    end
+                case 6
+                    if isa(varargin{end},'anakin.frame') % last is frame                        
+                        S.c = varargin{6}.m * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{6}.c; % xyz, axis, angle, frame
+                        S.m = varargin{6}.m * anakin.basis(varargin{4},varargin{5}).m;                         
+                    else
+                        St = anakin.frame(varargin{1},varargin{2},varargin{3},varargin{4},varargin{5},varargin{6},anakin.frame);
+                        S.c = St.c;
+                        S.m = St.m;
                     end
                 case 7 % relative x,y,z, relative i,j,k, frame
                     S.c = varargin{7}.m * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{7}.c;
@@ -102,6 +132,9 @@ classdef frame < anakin.point & anakin.basis % Inherit from point and basis
     methods % functionality 
         function origin = origin(S) % returns the origin point
             origin = anakin.point(S);
+        end
+        function basis = basis(S) % returns the origin point
+            basis = anakin.basis(S);
         end
         function S_ = subs(S,variables,values) % Particularize symbolic frame
             S_ = S;   

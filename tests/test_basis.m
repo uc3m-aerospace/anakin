@@ -117,8 +117,8 @@ function test_representations(~)
         B.i.components;
         B.j.components;
         B.k.components;
-        B.axis.components;
-        B.angle;
+        B.rotaxis.components;
+        B.rotangle;
         B.quaternions;
     end
 end

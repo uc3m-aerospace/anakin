@@ -1,12 +1,13 @@
 %{
-point: class to model a geometric point.
+point: class to model a geometric point. Inherits from vector.
 
-A point can be created by passing its absolute position vector in the canonical
-reference frame. Alternatively, a relative position vector and a frame can be
-specified. This class inherits from vector.
- 
-Equality and non-equality operators have been overloaded to apply to
-frames too.
+The class constructor accepts the following call types:
+- P0 = anakin.point(); % a0 is the null vector
+- P  = anakin.point(P); % (convert to point class)
+- P  = anakin.point(c); % c are coordinates in canonical frame S0
+- P  = anakin.point(x,y,z); % x,y,z are coordinates in S0
+Adding a frame S1 as a last argument understands all previous input as
+relative to that frame.
 
 METHODS: 
 * pos, vel, accel: return the velocity and acceleration vectors of the origin
@@ -24,11 +25,11 @@ classdef point < anakin.vector
                 case 0 % no arguments
                     return;
                 case 1 % vector or column 
-                        P.c = anakin.vector(varargin{1}).c; 
+                    P.c = anakin.point(varargin{1},anakin.frame).c;                         
                 case 2 % (relative vector or relative column), frame
                     P.c = varargin{2}.matrix * anakin.vector(varargin{1}).c + varargin{2}.c;
                 case 3 % x, y, z
-                    P.c = [varargin{1};varargin{2};varargin{3}];
+                    P.c = anakin.point(varargin{1},varargin{2},varargin{3},anakin.frame).c;   
                 case 4 % relative x, relative y, relative z, frame
                     P.c = varargin{4}.matrix * [varargin{1};varargin{2};varargin{3}] + varargin{4}.c;
                 otherwise % other possibilities are not allowed
