@@ -1,13 +1,21 @@
 %{
-point: class to model a geometric point. Inherits from vector.
+particle: class to model a point particle. Inherits from point.
 
-The class constructor accepts the following call types:
-- P0 = anakin.point(); % a0 is the null vector
-- P  = anakin.point(P); % (convert to point class)
-- P  = anakin.point(c); % c are coordinates in canonical frame S0
-- P  = anakin.point(x,y,z); % x,y,z are coordinates in S0
-Adding a frame S1 as a last argument understands all previous input as
-relative to that frame.
+P0 = anakin.particle();  % no arguments return default object
+P  = anakin.particle(P); % (convert to class)
+P  = anakin.particle(<P|A|a|c|x,y,z>,<mass>,<S1>);
+
+where:
+- <> denotes optional arguments
+- | denotes alternative arguments
+- P0 is the default particle (mass 1, located at the origin)
+- P  is a particle 
+- A is a point
+- a is a vector
+- c is an array with the three vector components
+- x,y,z are the three vector components
+- mass is the object mass
+- S1 is a frame. If given, all previous input as relative to that frame
 
 METHODS: 
 * pos, vel, accel: return the velocity and acceleration vectors of the origin
@@ -18,7 +26,7 @@ METHODS:
 
 MMM20180802
 %}
-classdef point < anakin.vector 
+classdef particle < anakin.point 
     methods % creation
         function P = point(varargin) % constructor
             switch nargin

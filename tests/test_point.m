@@ -19,20 +19,18 @@ end
  
 function test_creator(~) % Call creator without arguments
     import anakin.*
-    
-    P = point;
-end
-
-function test_creator2(~) % Call creator with numeric arguments
-    import anakin.*
     S1 = frame([0,1,0;-1,0,0;0,0,1]); 
     
-    P = point([1;2;0]); % coordinates in canonical reference frame
-    P = point([1,2,0]); % coordinates in canonical vector basis, row array form    
-    P = point([1;2;0],S1); % coordinates in another basis, column array form
-    P = point([1,2,0],S1); % coordinates in another basis, row array form    
-    P = point(1,2,0); % coordinates in canonical vector basis, independently given
-    P = point(1,2,0,S1); % coordinates in another basis, independently given
+    A = point; 
+    A = point(A); 
+    A = point([1;2;0]); % coordinates in canonical reference frame    
+    A = point([1,2,0]); % coordinates in canonical vector basis, row array form    
+    A = point(vector([1;2;0])); % vector
+    A = point(1,2,0); % coordinates in canonical vector basis, independently given
+    A = point([1;2;0],S1); % coordinates in another basis, column array form
+    A = point([1,2,0],S1); % coordinates in another basis, row array form    
+    A = point(vector([1;2;0]),S1); % vector    
+    A = point(1,2,0,S1); % coordinates in another basis, independently given
 end
 
 function test_posvelaccel(~) % Call position, velocity and acceleration wrt canonical reference frame
@@ -47,16 +45,16 @@ function test_posvelaccel(~) % Call position, velocity and acceleration wrt cano
         B = B0.rotatex(theta);
         S1 = frame(point(o),B);
 
-        p = vector(t,sin(theta),xi,B);
-        P = point(o+p);
+        a = vector(t,sin(theta),xi,B);
+        A = point(o+a);
 
-        assert(P.pos(S1) == vector([ t;sin(theta);xi],S1));
-        assert(P.vel(S1) == vector([ 1;cos(theta)*diff(theta,t);diff(xi)],S1));
-        assert(P.accel(S1) == vector([ 0; cos(theta(t))*diff(theta(t), 2) - sin(theta(t))*diff(theta(t), t)^2; diff(xi(t), 2)],S1));
+        assert(A.pos(S1) == vector([ t;sin(theta);xi],S1));
+        assert(A.vel(S1) == vector([ 1;cos(theta)*diff(theta,t);diff(xi)],S1));
+        assert(A.accel(S1) == vector([ 0; cos(theta(t))*diff(theta(t), 2) - sin(theta(t))*diff(theta(t), t)^2; diff(xi(t), 2)],S1));
 
-        assert(P.pos(S0) == o + p); 
-        assert(P.vel(S0) == o.dt(S0) + p.dt(S0));
-        assert(P.accel(S0) == o.dt(S0).dt(S0) + p.dt(S0).dt(S0));
+        assert(A.pos(S0) == o + a); 
+        assert(A.vel(S0) == o.dt(S0) + a.dt(S0));
+        assert(A.accel(S0) == o.dt(S0).dt(S0) + a.dt(S0).dt(S0));
     end
 end 
 
@@ -66,21 +64,21 @@ function test_subs(~) % Particularize a symbolic vector
         syms t;
         syms theta(t) phi(t) xi(t);
         assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real'),in(xi(t), 'real')]);    
-        P = point([cos(theta),sin(theta)+xi^2*sin(phi),xi*cos(phi)]); 
+        A = point([cos(theta),sin(theta)+xi^2*sin(phi),xi*cos(phi)]); 
 
-        Q = P.subs({t,theta,phi,xi},{1,t^2-4,2*t+3,-2}); % call with cell arrays
-        Q = P.subs([t,theta,phi,xi],[1,t^2-4,2*t+3,-2]); % call with arrays
+        B = A.subs({t,theta,phi,xi},{1,t^2-4,2*t+3,-2}); % call with cell arrays
+        B = A.subs([t,theta,phi,xi],[1,t^2-4,2*t+3,-2]); % call with arrays
     end
 end
   
 function test_plot(~) % vector plotting 
     import anakin.*
-    P = point([1,5,3]); 
+    A = point([1,5,3]); 
     
     f = figure;
-    P.plot;
-    P.plot('color','b');
-    P.plot('color',[0.5,0.5,0.5]);
+    A.plot;
+    A.plot('color','b');
+    A.plot('color',[0.5,0.5,0.5]);
     close(f);
 end
 

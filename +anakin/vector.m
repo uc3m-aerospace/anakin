@@ -1,14 +1,19 @@
 %{
 vector: class to define physical 3-vectors.
 
-The class constructor accepts the following call types:
-- a0 = anakin.vector(); % a0 is the null vector
-- a  = anakin.vector(a); % (convert to vector class)
-- a  = anakin.vector(c); % c are components in canonical basis B0
-- a  = anakin.vector(x,y,z); % x,y,z are components in B0
-Adding a basis B1 as a last argument understands all previous input as
-relative to that basis.
+a0 = anakin.vector();  % no arguments return default object
+a  = anakin.vector(a); % (convert to class)
+a  = anakin.vector(<a|c|x,y,z>,<B1>);
 
+where: 
+- <> denotes optional arguments
+- | denotes alternative arguments
+- a0 is the default vector (null vector)
+- a is a vector  
+- c is an array with the three vector components
+- x,y,z are the three vector components 
+- B1 is a basis. If given, all previous input as relative to that basis
+ 
 METHODS:
 * components: returns the components of the vector in a chosen basis
 * x,y,z: returns individual components in a chosen basis

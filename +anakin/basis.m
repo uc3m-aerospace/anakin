@@ -1,17 +1,24 @@
 %{
 basis: class to define orthonormal, right-handed vector bases.
 
-The class constructor accepts the following call types:
-- B0 = anakin.basis(); % B0 is the canonical vector basis
-- B  = anakin.basis(B); % (convert to basis class)
-- B  = anakin.basis(m); % m is rotation matrix from B0 to B
-- B  = anakin.basis(q); % q are the rotation quaternions from B0 to B
-- B  = anakin.basis(axis,angle); % axis,angle are the rotation vector and angle from B0 to B
-- B  = anakin.basis(i,j,k); % i,j,k are vector objects
-- B  = anakin.basis(ic,jc,kc); % ic,jc,kc are column components in B0  
-Alternatively, each vector x,y,z can be given independently. Adding a
-basis B1 as a last argument understands all previous input as relative
-to that basis. 
+B0 = anakin.basis();  % no arguments return default object
+B  = anakin.basis(B); % (convert to class)
+B  = anakin.basis(<B|m|(a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z)|q|axis,angle>,<B1>);
+
+where:
+- <> denotes optional arguments
+- | denotes alternative arguments
+- () groups argument options
+- B0 is the default basis (canonical vector basis)
+- B  is a basis
+- m  is a rotation matrix
+- a is a vector
+- c is an array with the three vector components
+- x,y,z are the three vector components
+- q are quaternions
+- axis is the unit vector of the axis of rotation
+- angle is angle of rotation about axis
+- B1 is a basis. If given, all previous input as relative to that basis
 
 METHODS:
 * matrix: transformation matrix to another basis 

@@ -2,22 +2,26 @@
 frame: class to define orthogonal, right-handed reference frames.
 Inherits from point and basis.
 
-The class constructor accepts the following call types:
-- S0 = anakin.frame(); % S0 is the canonical reference frame
-- S  = anakin.frame(S); % (convert to frame class)
-- S  = anakin.frame(a); % a is the origin vector/point from S0
-- S  = anakin.frame(ac); % components of a
-- S  = anakin.frame(ax,ay,az); % components of a
-- S  = anakin.frame(B); % B is the basis
-- S  = anakin.frame(m); % m is rotation matrix from B0 to B
-- S  = anakin.frame(q); % q are the rotation quaternions from B0 to B
-- S  = anakin.frame(axis,angle); % axis,angle are the rotation vector and angle from B0 to B
-- S  = anakin.frame(i,j,k); % i,j,k are the vectors of the basis
-- S  = anakin.frame(ic,jc,kc); % ic,jc,kc are column components in B0  
-- Any combination of inputs (first those of the origin, then the basis)
-Adding a frame S1 as a last argument understands all previous
-input as relative to that frame.
+S0 = anakin.frame();  % no arguments return default object
+S  = anakin.frame(B); % (convert to class)
+S  = anakin.frame(<A|a|c|x,y,z>,<B|m|(a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z)|q|axis,angle>,<B1>);
 
+where:
+- <> denotes optional arguments
+- | denotes alternative arguments
+- () groups argument options
+- S0 is the default frame (canonical reference frame)
+- A is a point
+- a is a vector
+- c is an array with the three vector components
+- x,y,z are the three vector components
+- B  is a basis
+- m  is a rotation matrix
+- q are quaternions
+- axis is the unit vector of the axis of rotation
+- angle is angle of rotation about axis
+- S1 is a frame. If given, all previous input as relative to that frame
+ 
 METHODS:
 * origin: returns the origin point
 * basis: returns the basis
