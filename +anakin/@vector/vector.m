@@ -2,17 +2,18 @@
 vector: class to define physical 3-vectors.
 
 The class constructor accepts the following call types:
-- a0 = anakin.vector(); % where: a0 is the null vector
-- a = anakin.vector(a); % (convert to vector class)
-- a = anakin.basis(c); % where: c are components in canonical basis B0
-- a = anakin.basis(rc,B1); % where: rc are relative components in B1 
-- a = anakin.basis(x,y,z); % where: x,y,z are components in B0
-- a = anakin.basis(rx,ry,rz,B1); % where: rx,rc,rz are relative components
+- a0 = anakin.vector(); % a0 is the null vector
+- a  = anakin.vector(a); % (convert to vector class)
+- a  = anakin.vector(c); % c are components in canonical basis B0
+- a  = anakin.vector(x,y,z); % x,y,z are components in B0
+Adding a basis B1 as a last argument understands all previous input as
+relative to that basis.
 
 METHODS:
 * components: returns the components of the vector in a chosen basis
 * x,y,z: returns individual components in a chosen basis
 * dir, magnitude: returns the unit vector and  magnitude of a vector
+* angle: returns angle between two vectors, optionally with sign
 * isunitary, isperpendicular, isparallel: checks for the corresponding
   property and returns true or false    
 * plot: plots the vector with quiver, at a chosen position
@@ -32,12 +33,8 @@ classdef vector
             switch nargin
                 case 0 % no arguments
                     return;
-                case 1 
-                    if isa(varargin{1},'anakin.vector') % relative vector, basis
-                        a.c = varargin{1}.c;
-                    else % relative column, basis
-                        a.c = anakin.vector(varargin{1},anakin.basis).c;  
-                    end 
+                case 1  
+                    a.c = anakin.vector(varargin{1},anakin.basis).c;                        
                 case 2 
                     if isa(varargin{1},'anakin.vector') % relative vector, basis
                         a.c = varargin{2}.matrix * varargin{1}.c;
@@ -64,7 +61,7 @@ classdef vector
             if isa(a.c,'sym') || isa(b.c,'sym') % symbolic inputs
                 value = isAlways(a.c==b.c,'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                value = (abs(a.c - b.c)<eps(max(abs(a.c(:))))+eps(max(abs(b.c(:))))); 
+                value = (abs(a.c - b.c) < 10*eps(a.c)+10*eps(b.c)); 
             end
             value = all(value(:));
         end
@@ -118,11 +115,11 @@ classdef vector
             end
         end
         function value = norm(a) % 2-norm of a real vector
-            value = sqrt(dot(a,a));
+            value = norm(a.c);
             if isa(value,'sym')
                 value = formula(simplify(value)); % simplify and force sym rather than symfun to allow indexing
             end
-        end
+        end        
         function value = cross(a,b) % cross product
             value = anakin.vector(cross(a.c,b.c)); 
         end
@@ -161,10 +158,22 @@ classdef vector
             z = components(3);
         end 
         function dir = dir(a) % returns unit vector along a
-            dir = a/norm(a);
+            dir = anakin.vector(a.c/norm(a.c));
         end
         function magnitude = magnitude(a) % returns magnitude of a (alias for norm)
-            magnitude = norm(a);
+            magnitude = norm(a.c);
+            if isa(magnitude,'sym')
+                magnitude = formula(simplify(magnitude)); % simplify and force sym rather than symfun to allow indexing
+            end
+        end
+        function value = angle(a,b,c) % angle between two vectors. A third one can be given to resolve sign
+            value = acos(dot(a.c,b.c)/(norm(a.c)*norm(b.c)));
+            if exist('c','var')
+                value = value * sign(dot(cross(a,b),c));
+            end
+            if isa(value,'sym')
+                value = formula(simplify(value)); % simplify and force sym rather than symfun to allow indexing
+            end
         end
     end
     methods % symbolic
@@ -181,19 +190,21 @@ classdef vector
     end
     methods % logical tests
         function isunitary = isunitary(a) % vector is unitary
-            isunitary = (dot(a,a)==1);
-            if isa(isunitary,'sym')
-                isunitary = isAlways(isunitary,'Unknown','false'); % In case of doubt, false
-            end
+            if isa(a.c,'sym') % symbolic inputs
+                isunitary = isAlways(dot(a,a)==1,'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                isunitary = (abs(dot(a,a)-1)<eps(max(abs(a.c(:))))); 
+            end 
         end
         function isperpendicular = isperpendicular(a,b) % the two vectors are perpendicular
-            isperpendicular = (dot(a,b)==0);
-            if isa(isperpendicular,'sym')
-                isperpendicular = isAlways(isperpendicular,'Unknown','false'); % In case of doubt, false
-            end
+            if isa(a.c,'sym') || isa(b.c,'sym') % symbolic inputs
+                isperpendicular = isAlways(dot(a,b)==0,'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                isperpendicular = (abs(dot(a,b))<eps(max(abs(a.c(:))))+eps(max(abs(b.c(:))))); 
+            end 
         end
-        function isparallel = isparallel(a,b) % the two vectors are parellel
-            isparallel = (cross(a,b)==anakin.vector(0,0,0));
+        function isparallel = isparallel(a,b) % the two vectors are parellel 
+            isparallel = (cross(a,b)==anakin.vector(0,0,0)); 
             if isa(isparallel,'sym')
                 isparallel = isAlways(isparallel,'Unknown','false'); % In case of doubt, false
             end

@@ -2,24 +2,25 @@
 basis: class to define orthonormal, right-handed vector bases.
 
 The class constructor accepts the following call types:
-- B0 = anakin.basis(); % where: B0 is the canonical vector basis
-- B = anakin.basis(B); % (convert to basis class)
-- B = anakin.basis(m); % where: m is rotation matrix from B0 to B
-- B = anakin.basis(m,B1); % where: m is relative rotation matrix from B1
-                          % to B 
-- B = anakin.basis(i,j,k); % where: i,j,k are vector objects
-- B = anakin.basis(ic,jc,kc); % where: ic,jc,kc are column components in
-                              % B0
-- B = anakin.basis(ric,rjc,rkc,B1); % where: ric,rjc, rkc are relative
-                                    % column components, and B1 is a
-                                    % vector basis  
-  
+- B0 = anakin.basis(); % B0 is the canonical vector basis
+- B  = anakin.basis(B); % (convert to basis class)
+- B  = anakin.basis(m); % m is rotation matrix from B0 to B
+- B  = anakin.basis(q); % q are the rotation quaternions from B0 to B
+- B  = anakin.basis(axis,angle); % axis,angle are the rotation vector and angle from B0 to B
+- B  = anakin.basis(i,j,k); % i,j,k are vector objects
+- B  = anakin.basis(ic,jc,kc); % ic,jc,kc are column components in B0  
+Alternatively, each vector x,y,z can be given independently. Adding a
+basis B1 as a last argument understands all previous input as relative
+to that basis. 
+
 METHODS:
 * matrix: transformation matrix to another basis 
 * i,j,k: returns the vectors of the basis (with respect to a chosen
   basis) 
 * axis, angle: returns unit vector and angle of rotation of B wrt B1
 * quaternions: returns the quaternions with respect to another basis
+* euler: returns the euler angles (of a chosen type) with respect to
+  another basis
 * rotatex,rotatey,rotatez: create simply rotated frame about one
   coordinated axis of another basis
 * omega, alpha: returns the angular velocity/acceleration vector omega
@@ -38,25 +39,85 @@ classdef basis
     end 
     methods % creation
         function B = basis(varargin) % constructor
+            for i = 1:length(varargin)
+               if isa(varargin{i},'sym')
+                   varargin{i} = formula(varargin{i}); % enforce formula to allow indexing
+               end
+            end
             switch nargin
                 case 0 % no arguments 
                     return; 
                 case 1
-                    if isa(varargin{1},'anakin.basis') % basis
-                        B.m = varargin{1}.m;
-                    else % matrix
-                        B.m = varargin{1};
+                    B.m = anakin.basis(varargin{1},anakin.basis).m; 
+                case 2 
+                    if isa(varargin{end},'anakin.basis') 
+                        if isa(varargin{1},'anakin.basis') % relative basis, basis
+                            B.m = varargin{2}.m * varargin{1}.m;
+                        elseif numel(varargin{1}) == 4 % relative quaternions, basis
+                            qq = varargin{1}; % quaternions with the scalar component last
+                            mm = [qq(4)^2+qq(1)^2-qq(2)^2-qq(3)^2,     2*(qq(1)*qq(2)-qq(4)*qq(3)),     2*(qq(1)*qq(3)+qq(4)*qq(2)); % matrix whose columns are the components of the ijk vectors of B expressed in B1
+                                      2*(qq(1)*qq(2)+qq(4)*qq(3)), qq(4)^2-qq(1)^2+qq(2)^2-qq(3)^2,     2*(qq(2)*qq(3)-qq(4)*qq(1));
+                                      2*(qq(1)*qq(3)-qq(4)*qq(2)),     2*(qq(2)*qq(3)+qq(4)*qq(1)), qq(4)^2-qq(1)^2-qq(2)^2+qq(3)^2];
+                            B.m = varargin{2}.m * mm;
+                        else % relative matrix, basis
+                            B.m = varargin{2}.m * varargin{1};
+                        end
+                    else % relative matrix, basis
+                        B.m = anakin.basis(varargin{1},varargin{2},anakin.basis).m; 
+                    end 
+                case 3 
+                    if isa(varargin{end},'anakin.basis') % relative axis, relative angle, basis
+                        axis = anakin.vector(varargin{1},varargin{3}).components;
+                        angle = varargin{2};
+                        c = cos(angle);
+                        s = sin(angle);
+                        C = 1-c;                        
+                        B.m = [              axis(1)^2*C+c, axis(1)*axis(2)*C-axis(3)*s, axis(1)*axis(3)*C+axis(2)*s;
+                               axis(1)*axis(2)*C+axis(3)*s,               axis(2)^2*C+c, axis(2)*axis(3)*C-axis(1)*s;
+                               axis(1)*axis(3)*C-axis(2)*s, axis(2)*axis(3)*C+axis(1)*s,               axis(3)^2*C+c];
+                    else 
+                        B.m = anakin.basis(varargin{1},varargin{2},varargin{3},anakin.basis).m;  
                     end
-                case 2 % relative matrix, basis
-                    B.m = varargin{2}.m * varargin{1};                     
-                case 3 % i,j,k (vectors or component columns)
-                    B.m = [anakin.vector(varargin{1}).components,...
-                           anakin.vector(varargin{2}).components,...
-                           anakin.vector(varargin{3}).components];
                 case 4 % relative i,j,k (component columns) and basis
                     B.m = [anakin.vector(varargin{1},varargin{4}).components,...
                            anakin.vector(varargin{2},varargin{4}).components,...
                            anakin.vector(varargin{3},varargin{4}).components];
+                case 5 
+                    B.m = anakin.basis(varargin{1},varargin{2},varargin{3},varargin{4},varargin{5},anakin.basis).m;  
+                case 6 
+                    if ~isa(varargin{1},'anakin.vector') && numel(varargin{1}) == 1 % relative xyz,j,k, basis
+                        B.m = [anakin.vector(varargin{1},varargin{2},varargin{3},varargin{6}).components,...
+                               anakin.vector(varargin{4},varargin{6}).components,...
+                               anakin.vector(varargin{5},varargin{6}).components];
+                    elseif ~isa(varargin{2},'anakin.vector') && numel(varargin{2}) == 1 % relative i,xyz,k, basis
+                        B.m = [anakin.vector(varargin{1},varargin{6}).components,...
+                               anakin.vector(varargin{2},varargin{3},varargin{4},varargin{6}).components,...
+                               anakin.vector(varargin{5},varargin{6}).components];
+                    else % relative i,j,xyz, basis
+                        B.m = [anakin.vector(varargin{1},varargin{6}).components,...
+                               anakin.vector(varargin{2},varargin{6}).components,...
+                               anakin.vector(varargin{3},varargin{4},varargin{5},varargin{6}).components];
+                    end
+                case 7 
+                    B.m = anakin.basis(varargin{1},varargin{2},varargin{3},varargin{4},varargin{5},varargin{6},varargin{7},anakin.basis).m;  
+                case 8
+                    if isa(varargin{1},'anakin.vector') || numel(varargin{1}) == 3 % relative i,xyz,xyz, basis
+                        B.m = [anakin.vector(varargin{1},varargin{8}).components,...
+                               anakin.vector(varargin{2},varargin{3},varargin{4},varargin{8}).components,...
+                               anakin.vector(varargin{5},varargin{6},varargin{7},varargin{8}).components];
+                    elseif isa(varargin{4},'anakin.vector') || numel(varargin{4}) == 3 % relative xyz,j,xyz, basis
+                        B.m = [anakin.vector(varargin{1},varargin{2},varargin{3},varargin{8}).components,...
+                               anakin.vector(varargin{4},varargin{8}).components,...
+                               anakin.vector(varargin{5},varargin{6},varargin{7},varargin{8}).components];
+                    else % relative i,j,xyz, basis
+                        B.m = [anakin.vector(varargin{1},varargin{2},varargin{3},varargin{8}).components,...
+                               anakin.vector(varargin{4},varargin{5},varargin{6},varargin{8}).components,...
+                               anakin.vector(varargin{7},varargin{8}).components];
+                    end
+                case 9 
+                    B.m = anakin.basis(varargin{1},varargin{2},varargin{3},varargin{4},varargin{5},varargin{6},varargin{7},varargin{8},varargin{9},anakin.basis).m;  
+                case 10 % relative xyz, xyz, xyz, B
+                    B.m = anakin.basis([varargin{1},varargin{2},varargin{3}],[varargin{4},varargin{5},varargin{6}],[varargin{7},varargin{8},varargin{9}],varargin{10}).m;  
                 otherwise
                     error('Wrong number of arguments in basis');
             end  
@@ -73,13 +134,25 @@ classdef basis
             if isa(B1.m,'sym') || isa(B1.m,'sym') % symbolic inputs
                 value = isAlways(B1.m==B2.m,'Unknown','false'); % In case of doubt, false
             else % numeric input
-                value = (abs(B1.m - B2.m)<eps(max(abs(B1.m(:))))+eps(max(abs(B2.m(:))))); 
+                value = (abs(B1.m - B2.m) < 10*eps(B1.m)+10*eps(B2.m)); 
             end
             value = all(value(:));
         end
         function value = ne(B1,B2) % overload ~=
             value = ~eq(B1,B2);
         end
+        function B3 = mtimes(B1,B2) % overloaded * (multiplication of two rotation matrices)
+            B3 = B1;
+            B3.m = B1.m * B2.m;
+        end 
+        function B3 = mrdivide(B1,B2) % overloaded /
+            B3 = B1;
+            B3.m = B1.m / B2.m;
+        end 
+        function B3 = mldivide(B1,B2) % overloaded \
+            B3 = B1;
+            B3.m = B1.m \ B2.m;
+        end 
     end
     methods % functionality
         function matrix = matrix(B,B1) % transformation matrix to another basis: [a(in B1)] = m * [a(in B)]
@@ -106,7 +179,7 @@ classdef basis
                 B1 = anakin.basis; % if no basis is given, use the canonical vector basis
             end
             mm = B.matrix(B1);
-            axis = anakin.vector([mm(2,3)-mm(3,2);mm(3,1)-mm(1,3);mm(1,2)-mm(2,1)],B1).dir; % fails if rotation angle is 0 or 180 deg
+            axis = anakin.vector([mm(3,2)-mm(2,3);mm(1,3)-mm(3,1);mm(2,1)-mm(1,2)],B1).dir; % fails if rotation angle is 0 or 180 deg
         end 
         function angle = angle(B,B1) % angle of rotation from B1
             if ~exist('B1','var')
@@ -123,7 +196,7 @@ classdef basis
             if ~exist('B1','var')
                 B1 = anakin.basis; % if no basis is given, use the canonical vector basis
             end
-            mm = B.matrix(B1);
+            mm = B.matrix(B1); 
             quaternions(4) = sqrt(trace(mm)+1)/2; % scalar term q4
             quaternions(1) = -(mm(2,3)-mm(3,2))/(4*quaternions(4)); % q1
             quaternions(2) = -(mm(3,1)-mm(1,3))/(4*quaternions(4)); % q2
@@ -133,15 +206,34 @@ classdef basis
                 quaternions = formula(simplify(quaternions)); % simplify and force sym rather than symfun to allow indexing
             end
         end
-        function euler = euler(B,type,B1) % Euler angles of rotation from B1. Fails depending on the value of the intermediate angle: symmetric Euler angles fail for theta2 = 0,180 deg. Asymmetric Euler angles fail for theta2 = 90,270 deg 
-            % type: a text string like '313' or '123' indicating the
-            % intrinsic axes of rotation
+        function euler = euler(B3,B0,type) % Euler angles of chosen type from B1. Fails depending on the value of the intermediate angle: symmetric Euler angles fail for theta2 = 0,180 deg. Asymmetric Euler angles fail for theta2 = 90,270 deg 
             if ~exist('B1','var')
-                B1 = anakin.basis; % if no basis is given, use the canonical vector basis
+                B0 = anakin.basis; % if no basis is given, use the canonical vector basis
             end
-            tbi(B,type,B1);
-            euler = 'to be implemented';
-            error(euler);
+            if ~exist('type','var') % type: a vector like [3,1,3] or [1,2,3] indicating the intrinsic axes of rotation
+                type = [3,1,3];            
+            end
+            m0 = eye(3); % this is B0 here!
+            m3 = B3.matrix(B0);
+            
+            one = anakin.vector(m0(:,type(1))); % first rotation direction
+            three = anakin.vector(m3(:,type(3))); % third rotation direction 
+            if type(1)==type(3) % symmetric Euler angles
+                euler(2) = angle(one,three);
+                two = cross(one,three); 
+            else % asymmetric Euler angles 
+                even = det(m0(:,type)); % get even/odd of permutation of type 
+                euler(2) = even * asin(dot(one,three)); 
+                two = -even * cross(one,three);
+            end 
+            two = two.dir; % second rotation direction, normalized
+            euler(1) = angle(anakin.vector(m0(:,type(2))),two,one);
+            euler(3) = angle(two,anakin.vector(m3(:,type(2))),three); 
+            
+            euler = reshape(euler,1,3); % Force row
+            if isa(euler,'sym') % symbolic input
+                euler = formula(simplify(euler)); % simplify and force sym rather than symfun to allow indexing
+            end 
         end
         function Bx = rotatex(B,angle) % returns rotated basis about x axis of B by angle
             Bx = B;
@@ -174,10 +266,11 @@ classdef basis
     end
     methods % logical tests
         function isorthonormal = isorthonormal(B) % all vectors are unitary and mutually orthogonal
-            isorthonormal = (B.m' * B.m == eye(3));
-            if isa(isorthonormal,'sym')
-                isorthonormal = isAlways(isorthonormal,'Unknown','false'); % In case of doubt, false
-            end
+            if isa(B.m,'sym') % symbolic inputs
+                isorthonormal = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                isorthonormal = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
+            end 
             isorthonormal = all(isorthonormal(:));
         end    
         function isrighthanded = isrighthanded(B) % basis is righthanded

@@ -22,11 +22,13 @@ function test_creator(~) % Call creator without arguments
     B1 = basis([0,1,0],[-1,0,0],[0,0,1]); 
     
     a = vector; % null vector
+    a = vector(vector); % itself
     a = vector([1;2;0]); % components in canonical vector basis, column array form
     a = vector([1,2,0]); % components in canonical vector basis, row array form    
-    a = vector([1;2;0],B1); % components in another basis, column array form
-    a = vector([1,2,0],B1); % components in another basis, row array form    
     a = vector(1,2,0); % components in canonical vector basis, independently given
+    a = vector(vector,B1); % relative vector in another basis
+    a = vector([1;2;0],B1); % components in another basis, column array form
+    a = vector([1,2,0],B1); % components in another basis, row array form       
     a = vector(1,2,0,B1); % components in another basis, independently given
 
     if license('test','symbolic_toolbox') 
@@ -67,8 +69,11 @@ function test_overloads(~) % components, x,y,z
     assert(dot(a,b) == 38.72);
     assert(norm(a) == sqrt(16.94));
     assert(cross(a,b) == vector([-3.63,7.26,-3.63]));
+    
     assert(dir(a) == vector([1.1,2.2,3.3]/sqrt(16.94)));
     assert(magnitude(a) == sqrt(16.94));
+    assert(angle(a,b) == acos(38.72/(sqrt(16.94)*sqrt(93.17))));
+    assert(angle(a,b,cross(b,a)) == -acos(38.72/(sqrt(16.94)*sqrt(93.17))));
      
     if license('test','symbolic_toolbox') 
         syms t x1(t) y1(t) z1(t) x2(t) y2(t) z2(t);
@@ -96,8 +101,12 @@ function test_overloads(~) % components, x,y,z
         assert(isAlways(dot(a,b) == x1*x2+y1*y2+z1*z2));
         assert(isAlways(norm(a) == sqrt(x1^2+y1^2+z1^2)));
         assert(cross(a,b) == vector([y1*z2-z1*y2,z1*x2-x1*z2,x1*y2-y1*x2]));
+       
         assert(dir(a) == vector([x1,y1,z1]/sqrt(x1^2+y1^2+z1^2)));
         assert(isAlways(magnitude(a) == sqrt(x1^2+y1^2+z1^2)));
+        assert(isAlways(angle(a,b) == acos(dot(a,b)/(norm(a)*norm(b)))));
+        assert(isAlways(angle(a,b,cross(b,a)) == sign(dot(cross(a,b),cross(b,a)))*acos(dot(a,b)/(norm(a)*norm(b)))));
+    
     end
 end
 
