@@ -1,9 +1,8 @@
 %{
-vector: class to define physical 3-vectors.
+vector: class to define 3-vectors.
 
-a0 = anakin.vector();  % no arguments return default object
-a  = anakin.vector(a); % (convert to class)
-a  = anakin.vector(<a|c|x,y,z>,<B1>);
+a0 = anakin.vector();  % no arguments return default object 
+a  = anakin.vector(a|c|(x,y,z),<B1>);
 
 where: 
 - <> denotes optional arguments
@@ -17,6 +16,7 @@ where:
 METHODS:
 * components: returns the components of the vector in a chosen basis
 * x,y,z: returns individual components in a chosen basis
+* tensorproduct: tensor product of two vectors
 * dir, magnitude: returns the unit vector and  magnitude of a vector
 * angle: returns angle between two vectors, optionally with sign
 * isunitary, isperpendicular, isparallel: checks for the corresponding
@@ -27,7 +27,7 @@ METHODS:
 * subs: takes values of the symbolic unknowns and returns a vector with
   purely numeric coordinates (symbolic variables must be used)   
 
-MMM20180802
+AUTHOR: Mario Merino <mario.merino@uc3m.es>
 %}
 classdef vector
     properties (Hidden = true, Access = protected) 
@@ -138,7 +138,7 @@ classdef vector
                 components = B0.matrix(B) * a.c;
             end
             if isa(components,'sym')
-                components = simplify(components);
+                components = formula(simplify(components));
             end
         end
         function x = x(a,B) % returns single component x in basis B
@@ -162,6 +162,9 @@ classdef vector
             components = a.components(B);
             z = components(3);
         end 
+        function tensor = tensorproduct(a,b) % returns tensor product a .x. b
+            tensor = anakin.tensor(a.c * b.c');
+        end
         function dir = dir(a) % returns unit vector along a
             dir = anakin.vector(a.c/norm(a.c));
         end

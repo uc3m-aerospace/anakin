@@ -3,8 +3,8 @@ frame: class to define orthogonal, right-handed reference frames.
 Inherits from point and basis.
 
 S0 = anakin.frame();  % no arguments return default object
-S  = anakin.frame(B); % (convert to class)
-S  = anakin.frame(<A|a|c|x,y,z>,<B|m|(a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z)|q|axis,angle>,<B1>);
+S  = anakin.frame(S,<S1>); % (convert to class)
+S  = anakin.frame(<A|a|c|x,y,z>,<B|m|(a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z)|q|axis,angle>,<S1>);
 
 where:
 - <> denotes optional arguments
@@ -16,7 +16,7 @@ where:
 - c is an array with the three vector components
 - x,y,z are the three vector components
 - B  is a basis
-- m  is a rotation matrix
+- m  is a matrix
 - q are quaternions
 - axis is the unit vector of the axis of rotation
 - angle is angle of rotation about axis
@@ -29,7 +29,7 @@ METHODS:
   purely numeric origin point and basis matrix (symbolic variables must be used)     
 * plot: plots the frame with quiver
 
-MMM20180802
+AUTHOR: Mario Merino <mario.merino@uc3m.es>
 %}
 classdef frame < anakin.point & anakin.basis % Inherit from point and basis 
     methods % creation

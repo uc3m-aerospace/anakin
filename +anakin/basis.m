@@ -1,9 +1,8 @@
 %{
 basis: class to define orthonormal, right-handed vector bases.
 
-B0 = anakin.basis();  % no arguments return default object
-B  = anakin.basis(B); % (convert to class)
-B  = anakin.basis(<B|m|(a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z)|q|axis,angle>,<B1>);
+B0 = anakin.basis();  % no arguments return default object 
+B  = anakin.basis(B|m|((a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z))|q|(axis,angle),<B1>);
 
 where:
 - <> denotes optional arguments
@@ -11,7 +10,7 @@ where:
 - () groups argument options
 - B0 is the default basis (canonical vector basis)
 - B  is a basis
-- m  is a rotation matrix
+- m  is a matrix
 - a is a vector
 - c is an array with the three vector components
 - x,y,z are the three vector components
@@ -35,11 +34,11 @@ METHODS:
   with respect to another basis (symbolic variables must be used)
 * subs: takes values of the symbolic unknowns and returns a basis with
   purely numeric matrix (symbolic variables must be used)    
-* isorthonormal, isrighthanded: checks the corresponding property and
+* isunitary, isrighthanded: checks the corresponding property and
   returns true or false  
 * plot: plots the basis with quiver, at a chosen position
 
-MMM20180802
+AUTHOR: Mario Merino <mario.merino@uc3m.es>
 %}
 classdef basis
     properties (Hidden = true, Access = protected)        
@@ -170,7 +169,7 @@ classdef basis
                 matrix = B1.m' * B.m;
             end
             if isa(matrix,'sym')
-                matrix = simplify(matrix);
+                matrix = formula(simplify(matrix));
             end
         end
         function i = i(B) % vector i of the basis
@@ -273,13 +272,13 @@ classdef basis
         end
     end
     methods % logical tests
-        function isorthonormal = isorthonormal(B) % all vectors are unitary and mutually orthogonal
+        function isunitary = isunitary(B) % all vectors are unitary and mutually orthogonal
             if isa(B.m,'sym') % symbolic inputs
-                isorthonormal = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
+                isunitary = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                isorthonormal = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
+                isunitary = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
             end 
-            isorthonormal = all(isorthonormal(:));
+            isunitary = all(isunitary(:));
         end    
         function isrighthanded = isrighthanded(B) % basis is righthanded
             isrighthanded = (det(B.m) > 0);

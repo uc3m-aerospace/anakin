@@ -7,6 +7,8 @@ NOTES:
   botton of Matlab's interface to runtests(<this function>)
 * Your working directory must be the
   directory where this test file is contained.  
+
+AUTHOR: Mario Merino <mario.merino@uc3m.es>
 %}
 function tests = test_vector
     clc;

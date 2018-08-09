@@ -1,9 +1,8 @@
 %{
 point: class to model a geometric point. Inherits from vector.
 
-A0 = anakin.point();  % no arguments return default object
-A  = anakin.point(A); % (convert to class)
-A  = anakin.point(<A|a|c|x,y,z>,<S1>);
+A0 = anakin.point();  % no arguments return default object 
+A  = anakin.point(A|a|c|(x,y,z),<S1>);
 
 where :
 - <> denotes optional arguments
@@ -22,7 +21,7 @@ METHODS:
 * displace: displace point by a vector
 * plot: plot a dot at point's position
 
-MMM20180802
+AUTHOR: Mario Merino <mario.merino@uc3m.es>
 %}
 classdef point < anakin.vector 
     methods % creation
