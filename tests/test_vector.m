@@ -19,34 +19,39 @@ end
 %----------------------------------------------------------------------
 %----------------------------------------------------------------------
  
-function test_creator(~) % Call creator without arguments
-    import anakin.*
-    B1 = basis([0,1,0],[-1,0,0],[0,0,1]); 
-    
-    a = vector; % null vector
-    a = vector(vector); % itself
-    a = vector([1;2;0]); % components in canonical vector basis, column array form
-    a = vector([1,2,0]); % components in canonical vector basis, row array form    
-    a = vector(1,2,0); % components in canonical vector basis, independently given
-    a = vector(vector,B1); % relative vector in another basis
-    a = vector([1;2;0],B1); % components in another basis, column array form
-    a = vector([1,2,0],B1); % components in another basis, row array form       
-    a = vector(1,2,0,B1); % components in another basis, independently given
+function test_creator(~) % Call creator 
+    import anakin.* 
+    B1 = basis([0,1,0],[-1,0,0],[0,0,1]);
+    c = [1;2;0];
+    cp = [-2;1;0];
+        
+    assert(vector == vector([0;0;0])); % null vector
+    assert(vector(vector) == vector); % itself
+    assert(all(vector(c).components == c)); % components in canonical vector basis, column array form
+    assert(all(vector(c').components == c)); % components in canonical vector basis, row array form
+    assert(all(vector(c(1),c(2),c(3)).components == c)); % components in canonical vector basis, independently given
+    assert(vector(vector,B1) == vector); % relative vector in another basis
+    assert(vector(c,B1) == vector(cp)); % components in another basis, column array form
+    assert(vector(c',B1) == vector(cp)); % components in another basis, row array form
+    assert(vector(c(1),c(2),c(3),B1) == vector(cp)); % components in another basis, independently given
+end
 
+function test_creator2(~) % Call creator with sym arguments
     if license('test','symbolic_toolbox') 
+        import anakin.*
         syms t theta(t) phi(t);
         assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);
         B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]);
+        c = formula([cos(theta);sin(theta);0]);
 
-        a = vector([cos(theta);sin(theta);0]); % components in canonical vector basis, column array form
-        a = vector([cos(theta),sin(theta),0]); % components in canonical vector basis, row array form
-        a = vector([cos(theta);sin(theta);0],B1); % components in another basis, column array form
-        a = vector([cos(theta),sin(theta),0],B1); % components in another basis, row array form
-        a = vector(cos(theta),sin(theta),0); % components in canonical vector basis, independently given
-        a = vector(cos(theta),sin(theta),0,B1); % components in another basis, independently given
+        a = vector(c); % components in canonical vector basis, column array form
+        a = vector(c'); % components in canonical vector basis, row array form
+        a = vector(c,B1); % components in another basis, column array form
+        a = vector(c',B1); % components in another basis, row array form
+        a = vector(c(1),c(2),c(3)); % components in canonical vector basis, independently given
+        a = vector(c(1),c(2),c(3),B1); % components in another basis, independently given
     end
 end
-
 
 function test_overloads(~) % components, x,y,z
     import anakin.*

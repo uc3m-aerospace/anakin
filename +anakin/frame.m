@@ -145,7 +145,7 @@ classdef frame < anakin.point & anakin.basis % Inherit from point and basis
             S_.c = double(subs(S.c,variables,values));
             S_.m = double(subs(S.m,variables,values));
         end         
-    end
+    end 
     methods % plotting
         function h = plot(S,varargin) % plot  
             cc = S.c;
@@ -161,13 +161,16 @@ classdef frame < anakin.point & anakin.basis % Inherit from point and basis
     end
     methods % removed methods 
         function mtimes(~,~)
-            error('This usage of point is not permitted');
+            error('This usage of frame is not permitted');
         end 
         function mrdivide(~,~)
-            error('This usage of point is not permitted');
+            error('This usage of frame is not permitted');
         end 
         function mldivide(~,~)
-            error('This usage of point is not permitted');
+            error('This usage of frame is not permitted');
         end 
+        function isunitary(~) % all vectors are unitary and mutually orthogonal
+            error('This usage of frame is not permitted');
+        end    
     end
 end

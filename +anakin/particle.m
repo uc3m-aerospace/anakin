@@ -2,18 +2,18 @@
 particle: class to model a point particle. Inherits from point.
 
 P0 = anakin.particle();  % no arguments return default object  
-P  = anakin.particle(<P|A|a|c|x,y,z>,<mass>,<S1>);
+P  = anakin.particle(<mass>,<P|A|a|c|x,y,z>,<S1>);
 
 where:
 - <> denotes optional arguments
 - | denotes alternative arguments
 - P0 is the default particle (mass 1, located at the origin)
 - P  is a particle 
+- mass is the object mass
 - A is a point
 - a is a vector
 - c is an array with the three vector components
 - x,y,z are the three vector components
-- mass is the object mass
 - S1 is a frame. If given, all previous input as relative to that frame
 
 METHODS: 
@@ -21,11 +21,13 @@ METHODS:
 * H: angular momentum about a point in a given reference frame
 * T: kinetic energy in a given reference frame
 * inertia: tensor of inertia about a point
+* subs: takes values of the symbolic unknowns and returns a particle
+  object which is purely numeric
 
 AUTHOR: Mario Merino <mario.merino@uc3m.es>
 %}
 classdef particle < anakin.point 
-    properties
+    properties (SetAccess = protected)
         mass = 1; % mass of the object
     end
     methods % creation
@@ -39,7 +41,7 @@ classdef particle < anakin.point
                 case 0 % no arguments
                     return;
                 case 1  
-                    Pt = anakin.particle(varargin{1},anakin.frame).c;
+                    Pt = anakin.particle(varargin{1},anakin.frame);
                     P.c = Pt.c; 
                     P.mass = Pt.mass;
                 case 2  
@@ -51,34 +53,32 @@ classdef particle < anakin.point
                             P.mass = varargin{1};
                         end
                     else
-                        Pt = anakin.particle(varargin{1},varargin{2},anakin.frame).c;
+                        Pt = anakin.particle(varargin{1},varargin{2},anakin.frame);
                         P.c = Pt.c;
                         P.mass = Pt.mass;
                     end 
                 case 3  
                     if isa(varargin{end},'anakin.frame') % last is frame
-                        if isa(varargin{1},'anakin.vector') || numel(varargin{1}) == 3 % (vector or components), mass, frame
-                            P.c = varargin{3}.matrix * anakin.vector(varargin{1}).c + varargin{3}.c;
-                            P.mass = varargin{2}; 
+                        if isa(varargin{2},'anakin.vector') || numel(varargin{2}) == 3 % (vector or components), mass, frame
+                            P.c = varargin{3}.matrix * anakin.vector(varargin{2}).c + varargin{3}.c;
+                            P.mass = varargin{1}; 
                         end
                     else
-                        Pt = anakin.particle(varargin{1},varargin{2},varargin{3},anakin.frame).c;
+                        Pt = anakin.particle(varargin{1},varargin{2},varargin{3},anakin.frame);
                         P.c = Pt.c;
                         P.mass = Pt.mass;
                     end  
                 case 4 
-                    if isa(varargin{end},'anakin.frame') % last is frame
-                        if isa(varargin{1},'anakin.vector') || numel(varargin{1}) == 3 % xyz, frame
-                            P.c = varargin{4}.matrix * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{4}.c; 
-                        end
+                    if isa(varargin{end},'anakin.frame') % last is frame 
+                        P.c = varargin{4}.matrix * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{4}.c; 
                     else
-                        Pt = anakin.particle(varargin{1},varargin{2},varargin{3},varargin{4},anakin.frame).c;
+                        Pt = anakin.particle(varargin{1},varargin{2},varargin{3},varargin{4},anakin.frame);
                         P.c = Pt.c;
                         P.mass = Pt.mass;
                     end   
                 case 5 % xyz, mass, frame
-                    P.c = varargin{5}.matrix * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{5}.c;
-                    P.mass = varargin{4}; 
+                    P.c = varargin{5}.matrix * anakin.vector(varargin{2},varargin{3},varargin{4}).c + varargin{5}.c;
+                    P.mass = varargin{1}; 
                 otherwise % other possibilities are not allowed
                     error('Wrong number of arguments in particle');
             end       
@@ -111,6 +111,14 @@ classdef particle < anakin.point
                 S1 = anakin.frame; % default frame
             end
             T = (P.mass/2) * dot(P.vel(S1),P.vel(S1));
+            if isa(T,'sym') % symbolic input
+                T = formula(simplify(T)); % simplify and force sym rather than symfun to allow indexing
+            end
+        end
+        function P_ = subs(P,variables,values) % particularize symbolic vector
+            P_ = P;
+            P_.c = double(subs(P.c,variables,values));
+            P_.mass = double(subs(P.mass,variables,values));
         end
     end      
 end

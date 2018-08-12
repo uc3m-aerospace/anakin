@@ -34,7 +34,7 @@ METHODS:
   with respect to another basis (symbolic variables must be used)
 * subs: takes values of the symbolic unknowns and returns a basis with
   purely numeric matrix (symbolic variables must be used)    
-* isunitary, isrighthanded: checks the corresponding property and
+* isorthogonal, isrighthanded: checks the corresponding property and
   returns true or false  
 * plot: plots the basis with quiver, at a chosen position
 
@@ -272,13 +272,13 @@ classdef basis
         end
     end
     methods % logical tests
-        function isunitary = isunitary(B) % all vectors are unitary and mutually orthogonal
+        function isorthogonal = isorthogonal(B) % all vectors are unitary and mutually orthogonal
             if isa(B.m,'sym') % symbolic inputs
-                isunitary = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
+                isorthogonal = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                isunitary = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
+                isorthogonal = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
             end 
-            isunitary = all(isunitary(:));
+            isorthogonal = all(isorthogonal(:));
         end    
         function isrighthanded = isrighthanded(B) % basis is righthanded
             isrighthanded = (det(B.m) > 0);
