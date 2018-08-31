@@ -74,4 +74,4 @@ by citing this repository.
 ## License
 
 Copyright (c) 2018 Mario Merino.
-The software is released as open source with the [MIT License](LICENSE.md).
+The software is released as open source under the [MIT License](LICENSE.md).
