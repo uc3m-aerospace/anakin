@@ -2,7 +2,7 @@
 frame: class to define orthogonal, right-handed reference frames.
 Inherits from point and basis.
 
-S0 = anakin.frame();  % no arguments return default object
+S0 = anakin.frame();  % returns default object
 S  = anakin.frame(S,<S1>); % (convert to class)
 S  = anakin.frame(<A|a|c|x,y,z>,<B|m|(a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z)|q|axis,angle>,<S1>);
 
@@ -131,6 +131,12 @@ classdef frame < anakin.point & anakin.basis % Inherit from point and basis
         end
         function value = ne(S1,S2) % overload ~=
             value = ~eq(S1,S2);
+        end
+        function disp(S) % display
+            disp('Reference frame with origin point canonical position:')
+            disp(S.c)
+            disp('and basis canonical rotation matrix:')
+            disp(S.m)
         end
     end
     methods % functionality 

@@ -1,7 +1,7 @@
 %{
 point: class to model a geometric point. Inherits from vector.
 
-A0 = anakin.point();  % no arguments return default object 
+A0 = anakin.point();  % returns default object 
 A  = anakin.point(A|a|c|(x,y,z),<S1>);
 
 where :
@@ -42,6 +42,12 @@ classdef point < anakin.vector
             end       
         end 
     end 
+    methods % overloads
+        function disp(A) % display
+            disp('Geometric point with canonical position:')
+            disp(A.c)
+        end
+    end
     methods % functionality
         function rO_1 = pos(A,S1) % Returns the position vector of the point with respect to reference frame S1
             if ~exist('S1','var') % If no S1 is given, assume the canonical reference frame

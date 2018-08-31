@@ -142,6 +142,17 @@ function test_momentum(~) % call momentum, linear momentum, energy
     end  
 end
 
+function test_inertia(~) % Inertia
+    import anakin.*
+    S1 = frame([4,5,6],[0,1,0;-1,0,0;0,0,1]); 
+    x = 1; y = 2; z = 3; c = [x;y;z]; cp = [6;4;9]; 
+    mass = 3;
+
+    P = particle(mass,c);
+    i = P.inertia(S1);
+ 
+end
+
 function test_subs(~) % Particularize a symbolic vector
     import anakin.*
     if license('test','symbolic_toolbox') 

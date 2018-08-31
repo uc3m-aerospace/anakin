@@ -1,7 +1,7 @@
 %{
 basis: class to define orthonormal, right-handed vector bases.
 
-B0 = anakin.basis();  % no arguments return default object 
+B0 = anakin.basis();  % returns default object 
 B  = anakin.basis(B|m|((a|c|x,y,z),(a|c|x,y,z),(a|c|x,y,z))|q|(axis,angle),<B1>);
 
 where:
@@ -160,6 +160,10 @@ classdef basis
             B3 = B1;
             B3.m = B1.m \ B2.m;
         end 
+        function disp(B) % display
+            disp('Vector basis object with canonical rotation matrix:')
+            disp(B.m)
+        end
     end
     methods % functionality
         function matrix = matrix(B,B1) % transformation matrix to another basis: [a(in B1)] = m * [a(in B)]

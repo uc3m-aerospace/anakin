@@ -1,7 +1,7 @@
 %{
 vector: class to define 3-vectors.
 
-a0 = anakin.vector();  % no arguments return default object 
+a0 = anakin.vector();  % returns default object 
 a  = anakin.vector(a|c|(x,y,z),<B1>);
 
 where: 
@@ -127,6 +127,10 @@ classdef vector
         end        
         function value = cross(a,b) % cross product
             value = anakin.vector(cross(a.c,b.c)); 
+        end
+        function disp(a) % display
+            disp('Vector with canonical components:')
+            disp(a.c)
         end
     end 
     methods % functionality

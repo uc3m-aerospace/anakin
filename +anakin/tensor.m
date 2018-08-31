@@ -1,7 +1,7 @@
 %{
 tensor: class to define 3x3-tensors.
 
-T0 = anakin.tensor();  % no arguments return default object
+T0 = anakin.tensor();  % returns default object
 T  = anakin.tensor(T|m|((a|c),(a|c)),<B1>);
 
 where: 
@@ -125,6 +125,10 @@ classdef tensor
            v1 = anakin.vector(V(:,1));
            v2 = anakin.vector(V(:,2));
            v3 = anakin.vector(V(:,3));
+        end
+        function disp(T) % display
+            disp('Tensor with canonical components:')
+            disp(T.m)
         end
     end 
     methods % functionality

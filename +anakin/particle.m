@@ -1,7 +1,7 @@
 %{
 particle: class to model a point particle. Inherits from point.
 
-P0 = anakin.particle();  % no arguments return default object  
+P0 = anakin.particle();  % returns default object  
 P  = anakin.particle(<mass>,<P|A|a|c|x,y,z>,<S1>);
 
 where:
@@ -90,6 +90,14 @@ classdef particle < anakin.point
             end
         end
     end 
+    methods
+        function disp(P) % display
+            disp('Point particle with mass:')
+            disp(P.mass)            
+            disp('and canonical position:')
+            disp(P.c)            
+        end
+    end
     methods % functionality 
         function p = p(P,S1) % linear momentum in S1
             if ~exist('S1','var')
