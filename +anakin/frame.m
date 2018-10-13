@@ -175,8 +175,11 @@ classdef frame < anakin.point & anakin.basis % Inherit from point and basis
         function mldivide(~,~)
             error('This usage of frame is not permitted');
         end 
-        function isunitary(~) % all vectors are unitary and mutually orthogonal
+        function mpower(~,~) 
             error('This usage of frame is not permitted');
-        end    
+        end 
+        function inv(~) 
+            error('This usage of frame is not permitted');
+        end 
     end
 end
