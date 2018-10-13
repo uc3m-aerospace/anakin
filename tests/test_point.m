@@ -35,6 +35,17 @@ function test_creator(~) % Call creator without arguments
     A = point(1,2,0,S1); % coordinates in another basis, independently given
 end
 
+function test_coordinates(~) % call coordinates, x, y, z
+    import anakin.*
+    S1 = frame([2,2,2],[0,1,0;-1,0,0;0,0,1]); 
+    
+    A = point(1,2,3,S1); 
+    assert(all(A.coordinates(S1) == [1;2;3]));
+    assert(A.x(S1) == 1);
+    assert(A.y(S1) == 2);
+    assert(A.z(S1) == 3);
+end
+
 function test_posvelaccel(~) % Call position, velocity and acceleration wrt canonical reference frame
     import anakin.*
     if license('test','symbolic_toolbox') 
@@ -49,10 +60,10 @@ function test_posvelaccel(~) % Call position, velocity and acceleration wrt cano
 
         a = vector(t,sin(theta),xi,B);
         A = point(o+a);
-
-        assert(A.pos(S1) == vector([ t;sin(theta);xi],S1));
-        assert(A.vel(S1) == vector([ 1;cos(theta)*diff(theta,t);diff(xi)],S1));
-        assert(A.accel(S1) == vector([ 0; cos(theta(t))*diff(theta(t), 2) - sin(theta(t))*diff(theta(t), t)^2; diff(xi(t), 2)],S1));
+        
+        assert(A.pos(S1) == vector([t;sin(theta);xi],S1));
+        assert(A.vel(S1) == vector([1;cos(theta)*diff(theta,t);diff(xi)],S1));
+        assert(A.accel(S1) == vector([0; cos(theta(t))*diff(theta(t), 2) - sin(theta(t))*diff(theta(t), t)^2; diff(xi(t), 2)],S1));
 
         assert(A.pos(S0) == o + a); 
         assert(A.vel(S0) == o.dt(S0) + a.dt(S0));

@@ -55,6 +55,37 @@ classdef point < anakin.vector
             end
             rO_1 = anakin.vector(A.c - S1.c);
         end
+        function coordinates = coordinates(A,S1) % returns the coordinates of A with respect to S1
+            if ~exist('S1','var')
+                S1 = anakin.frame; % canonical vector basis
+            end
+            coordinates = A.pos(S1).components(S1);
+        end
+        function x = x(A,S1) % returns single coordinate x with respect to S1
+            if ~exist('S1','var')
+                S1 = anakin.frame; % canonical vector basis
+            end
+            coordinates = A.coordinates(S1);
+            x = coordinates(1);
+        end
+        function y = y(A,S1) % returns single coordinate y with respect to S1
+            if ~exist('S1','var')
+                S1 = anakin.frame; % canonical vector basis
+            end
+            coordinates = A.coordinates(S1);
+            y = coordinates(2);
+        end
+        function z = z(A,S1) % returns single coordinate z with respect to S1
+            if ~exist('S1','var')
+                S1 = anakin.frame; % canonical vector basis
+            end
+            coordinates = A.coordinates(S1);
+            z = coordinates(3);
+        end
+        function A_ = displace(A,a) % returns displaced point by vector a
+            A_ = A;
+            A_.c = A.c + a.c;
+        end    
         function vO_1 = vel(A,S1) % Returns the velocity vector of the point with respect to reference frame S1
             if ~exist('S1','var') % If no S1 is given, assume the canonical reference frame
                 S1 = anakin.frame;
@@ -68,11 +99,7 @@ classdef point < anakin.vector
             end
             vO_1 = A.vel(S1);
             aO_1 = vO_1.dt(S1);
-        end
-        function A_ = displace(A,a) % returns displaced point by vector a
-            A_ = A;
-            A_.c = A.c + a.c;
-        end      
+        end          
     end 
     methods % plotting
         function h = plot(A,varargin) % plot
@@ -133,16 +160,7 @@ classdef point < anakin.vector
         end
         function components(~,~)
             error('This usage of point is not permitted');
-        end
-        function x(~,~)
-            error('This usage of point is not permitted');
-        end
-        function y(~,~)
-            error('This usage of point is not permitted');
-        end
-        function z(~,~)
-            error('This usage of point is not permitted');
-        end
+        end 
         function dt(~,~)
             error('This usage of point is not permitted');
         end 
