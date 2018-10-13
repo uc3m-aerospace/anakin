@@ -34,7 +34,7 @@ METHODS:
   with respect to another basis (symbolic variables must be used)
 * subs: takes values of the symbolic unknowns and returns a basis with
   purely numeric matrix (symbolic variables must be used)    
-* isorthogonal, isrighthanded: checks the corresponding property and
+* isisorthonormal, isrighthanded: checks the corresponding property and
   returns true or false  
 * plot: plots the basis with quiver, at a chosen position
 
@@ -160,6 +160,14 @@ classdef basis
             B3 = B1;
             B3.m = B1.m \ B2.m;
         end 
+        function B2 = mpower(B1,exponent) % overloaded ^
+            B2 = B1;
+            B2.m = B1.m^exponent;
+        end 
+        function B2 = inv(B1) % overloaded inv
+            B2 = B1;
+            B2.m = inv(B1.m);
+        end 
         function disp(B) % display
             disp('Vector basis object with canonical rotation matrix:')
             disp(B.m)
@@ -201,7 +209,6 @@ classdef basis
             if isa(angle,'sym') % symbolic input
                 angle = formula(simplify(angle)); % simplify and force sym rather than symfun
             end
-
         end
         function quaternions = quaternions(B,B1) % quaternions of rotation from B1. Fails when rotation angle is 180 deg
             if ~exist('B1','var')
@@ -217,15 +224,15 @@ classdef basis
                 quaternions = formula(simplify(quaternions)); % simplify and force sym rather than symfun to allow indexing
             end
         end
-        function euler = euler(B3,B0,type) % Euler angles of chosen type from B1. Fails depending on the value of the intermediate angle: symmetric Euler angles fail for theta2 = 0,180 deg. Asymmetric Euler angles fail for theta2 = 90,270 deg 
+        function euler = euler(B3,type,B1) % Euler angles of chosen type from B1. Fails depending on the value of the intermediate angle: symmetric Euler angles fail for theta2 = 0,180 deg. Asymmetric Euler angles fail for theta2 = 90,270 deg 
             if ~exist('B1','var')
-                B0 = anakin.basis; % if no basis is given, use the canonical vector basis
+                B1 = anakin.basis; % if no basis is given, use the canonical vector basis
             end
             if ~exist('type','var') % type: a vector like [3,1,3] or [1,2,3] indicating the intrinsic axes of rotation
                 type = [3,1,3];            
             end
             m0 = eye(3); % this is B0 here!
-            m3 = B3.matrix(B0);
+            m3 = B3.matrix(B1);
             
             one = anakin.vector(m0(:,type(1))); % first rotation direction
             three = anakin.vector(m3(:,type(3))); % third rotation direction 
@@ -276,13 +283,13 @@ classdef basis
         end
     end
     methods % logical tests
-        function isorthogonal = isorthogonal(B) % all vectors are unitary and mutually orthogonal
+        function isorthonormal = isorthonormal(B) % all vectors are unitary and mutually orthogonal
             if isa(B.m,'sym') % symbolic inputs
-                isorthogonal = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
+                isorthonormal = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                isorthogonal = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
+                isorthonormal = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
             end 
-            isorthogonal = all(isorthogonal(:));
+            isorthonormal = all(isorthonormal(:));
         end    
         function isrighthanded = isrighthanded(B) % basis is righthanded
             isrighthanded = (det(B.m) > 0);

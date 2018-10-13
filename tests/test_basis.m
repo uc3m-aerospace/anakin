@@ -144,14 +144,14 @@ function test_euler(~) % euler angles
         B3 = B2.rotatez(phi);    
         
         assert(vector(B3.euler) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
-        assert(vector(B3.euler(B0,[3,1,3])) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
+        assert(vector(B3.euler([3,1,3],B0)) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
         
         B0 = basis; % Example of consecutive rotations with Euler angles
         B1 = B0.rotatex(mypsi);
         B2 = B1.rotatey(theta);
         B3 = B2.rotatez(phi);    
          
-        assert(vector(B3.euler(B0,[1,2,3])) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
+        assert(vector(B3.euler([1,2,3],B0)) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
     end
 end
 
