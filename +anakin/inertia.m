@@ -2,7 +2,7 @@
 inertia: class to define inertia tensors. Inherits from tensor
 
 I0 = anakin.inertia();  % return default object
-I  = anakin.inertia(I|T|m,<a|c>,<S1>);
+I  = anakin.inertia(I|T|m,<a|c>,<S1>); ??? give point, rather?
 
 where: 
 - <> denotes optional arguments

@@ -33,12 +33,7 @@ AUTHOR: Mario Merino <mario.merino@uc3m.es>
 %}
 classdef frame < anakin.point & anakin.basis % Inherit from point and basis 
     methods % creation
-        function S = frame(varargin) % constructor
-            for i = 1:length(varargin)
-               if isa(varargin{i},'sym')
-                   varargin{i} = formula(varargin{i}); % enforce formula to allow indexing
-               end
-            end
+        function S = frame(varargin) % constructor 
             switch nargin
                 case 0 % no arguments
                     return;
@@ -179,6 +174,12 @@ classdef frame < anakin.point & anakin.basis % Inherit from point and basis
             error('This usage of frame is not permitted');
         end 
         function inv(~) 
+            error('This usage of frame is not permitted');
+        end 
+        function ctranspose(~) 
+            error('This usage of frame is not permitted');
+        end 
+        function transpose(~) 
             error('This usage of frame is not permitted');
         end 
     end

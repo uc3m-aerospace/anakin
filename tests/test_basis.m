@@ -34,23 +34,8 @@ function test_creator(~) % Call creator without arguments
         else 
             break;
         end 
-        B = basis(vector([cos(theta),sin(theta),0]),vector([-sin(theta),cos(theta),0]),vector([0;0;1])); % with vectors
+        B = basis(tensor([cos(theta),sin(theta),0]),tensor([-sin(theta),cos(theta),0]),tensor([0;0;1])); % with tensors
         B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]); % with arrays 
-        B = basis(cos(theta),sin(theta),0,[-sin(theta),cos(theta),0],[0;0;1]); % xyz,j,k
-        B = basis([cos(theta),sin(theta),0],-sin(theta),cos(theta),0,[0;0;1]); % i,xyz,k
-        B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],0,0,1); % i,j,xyz
-        B = basis([cos(theta),sin(theta),0], -sin(theta),cos(theta),0, 0,0,1); % i,xyz,xyz
-        B = basis(cos(theta),sin(theta),0, [-sin(theta),cos(theta),0], 0,0,1); % xyz,j,xyz
-        B = basis(cos(theta),sin(theta),0,   -sin(theta),cos(theta),0,[0;0;1]); % xyz,xyz,k
-        B = basis(cos(theta),sin(theta),0, -sin(theta),cos(theta),0, 0,0,1); % xyz,xyz,xyz
-        
-        B = basis(cos(theta),sin(theta),0,vector([-sin(theta),cos(theta),0]),vector([0;0;1])); % xyz,j,k
-        B = basis(vector([cos(theta),sin(theta),0]),-sin(theta),cos(theta),0,vector([0;0;1])); % i,xyz,k
-        B = basis(vector([cos(theta),sin(theta),0]),vector([-sin(theta),cos(theta),0]),0,0,1); % i,j,xyz
-        B = basis(vector([cos(theta),sin(theta),0]), -sin(theta),cos(theta),0, 0,0,1); % i,xyz,xyz
-        B = basis(cos(theta),sin(theta),0, vector([-sin(theta),cos(theta),0]), 0,0,1); % xyz,j,xyz
-        B = basis(cos(theta),sin(theta),0,   -sin(theta),cos(theta),0,vector([0;0;1])); % xyz,xyz,k 
-        
         B = basis([sin(theta/2),0,0,cos(theta/2)]); % quaternions
         B = basis([1,0,0,],theta); % axis, angle
     end    
@@ -96,6 +81,10 @@ function test_overloads(~)
         assert(B1~=B2)
         assert(B3==B3b)    
         assert(B1*B2 == B3)
+        assert(inv(B1)\B2 == B3)
+        assert(B1/inv(B2) == B3)
+        assert(inv(B1) == B1')
+        assert(B1' == B1.')
     end
 end
 
@@ -103,12 +92,11 @@ function test_representations(~)
     import anakin.*
     for i = 1:2
         if i == 1
-            theta = pi/6;
-            phi = pi/5;
+            theta = pi/6; 
         elseif license('test','symbolic_toolbox')
             syms t;
             syms theta(t) phi(t);
-            assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);
+            assume([in(t, 'real'), in(theta(t), 'real')]);
         else 
             break;
         end  
@@ -116,12 +104,14 @@ function test_representations(~)
         B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);     
 
         B.matrix;
-        B.i.components;
-        B.j.components;
-        B.k.components;
-        B.rotaxis.components;
-        B.rotangle;
-        B.quaternions;
+        assert(B.e(1) == tensor([cos(theta),sin(theta),0]));
+        assert(B.e(2) == tensor([-sin(theta),cos(theta),0]));
+        assert(B.e(3) == tensor([0;0;1]));
+        assert(B.rotaxis == tensor([0;0;sin(theta)/abs(sin(theta))]));
+        assert(isAlways(B.rotangle - acos(cos(theta)) < eps));
+        if i == 1 % tests with sym variables are damn hard
+            assert(all(B.quaternions == [0;0;sin(theta/2);cos(theta/2)]));
+        end
     end
 end
 
@@ -143,19 +133,19 @@ function test_euler(~) % euler angles
         B2 = B1.rotatex(theta);
         B3 = B2.rotatez(phi);    
         
-        assert(vector(B3.euler) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
-        assert(vector(B3.euler([3,1,3],B0)) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
+        assert(tensor(B3.euler) == tensor([mypsi,theta,phi])); % they are not tensors, but I call tensor to simplify comparision here!
+        assert(tensor(B3.euler([3,1,3],B0)) == tensor([mypsi,theta,phi])); % they are not tensors, but I call tensor to simplify comparision here!
         
         B0 = basis; % Example of consecutive rotations with Euler angles
         B1 = B0.rotatex(mypsi);
         B2 = B1.rotatey(theta);
         B3 = B2.rotatez(phi);    
          
-        assert(vector(B3.euler([1,2,3],B0)) == vector([mypsi,theta,phi])); % they are not vectors, but I call vector to simplify comparision here!
+        assert(tensor(B3.euler([1,2,3],B0)) == tensor([mypsi,theta,phi])); % they are not tensors, but I call tensor to simplify comparision here!
     end
 end
 
-function test_omegaalpha(~) % Call angular velocity and acceleration wrt canonical vector basis
+function test_omegaalpha(~) % Call angular velocity and acceleration wrt canonical tensor basis
     import anakin.*
     if license('test','symbolic_toolbox')
         syms t;
@@ -164,22 +154,22 @@ function test_omegaalpha(~) % Call angular velocity and acceleration wrt canonic
         
         B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);     
 
-        assert(B.omega == vector([ 0;0; diff(theta(t), 1)]));
-        assert(B.alpha == vector([ 0;0; diff(theta(t), 2)]));
+        assert(B.omega == tensor([ 0;0; diff(theta(t), 1)]));
+        assert(B.alpha == tensor([ 0;0; diff(theta(t), 2)]));
     end
 end
 
-function test_omegaalpha2(~) % Call angular velocity, angular acceleration wrt a second vector basis
+function test_omegaalpha2(~) % Call angular velocity, angular acceleration wrt a second tensor basis
     import anakin.*
     if license('test','symbolic_toolbox')
         syms t;
         syms theta(t) phi(t);
         assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real')]);    
-        B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0;-sin(phi);cos(phi)]); 
-        B2 = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1],B1); % defined wrt B1
+        B1 = basis([1,0,0;0,cos(phi),-sin(phi);0,sin(phi),cos(phi)]); 
+        B2 = basis([cos(theta),-sin(theta),0;sin(theta),cos(theta),0;0,0,1],B1); % defined wrt B1
 
-        assert(B2.omega(B1) == vector([ 0;0; diff(theta(t), 1)],B1));
-        assert(B2.alpha(B1) == vector([ 0;0; diff(theta(t), 2)],B1));    
+        assert(B2.omega(B1) == tensor([ 0;0; diff(theta(t), 1)],B1));
+        assert(B2.alpha(B1) == tensor([ 0;0; diff(theta(t), 2)],B1));    
     end
 end
 
@@ -224,7 +214,7 @@ function test_rotated(~) % create rotated bases
     end
 end
 
-function test_plot(~) % vector plotting  
+function test_plot(~) % tensor plotting  
     import anakin.*
     B = basis;
     B1 = B.rotatex(pi/6).rotatey(pi/6);
@@ -232,7 +222,7 @@ function test_plot(~) % vector plotting
     f = figure;
     B.plot;
     B1.plot('color','r');
-    B.plot(vector([1,1,1]),'color','b');
+    B.plot(tensor([1,1,1]),'color','b');
     close(f);
 end
 

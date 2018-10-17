@@ -31,12 +31,7 @@ classdef particle < anakin.point
         mass = 1; % mass of the object
     end
     methods % creation
-        function P = particle(varargin) % constructor
-            for i = 1:length(varargin)
-               if isa(varargin{i},'sym')
-                   varargin{i} = formula(varargin{i}); % enforce formula to allow indexing
-               end
-            end            
+        function P = particle(varargin) % constructor 
             switch nargin
                 case 0 % no arguments
                     return;
@@ -59,7 +54,7 @@ classdef particle < anakin.point
                     end 
                 case 3  
                     if isa(varargin{end},'anakin.frame') % last is frame
-                        if isa(varargin{2},'anakin.vector') || numel(varargin{2}) == 3 % (vector or components), mass, frame
+                        if isa(varargin{2},'anakin.vector') || numel(varargin{2}) == 3 % mass, (vector or components), frame
                             P.c = varargin{3}.matrix * anakin.vector(varargin{2}).c + varargin{3}.c;
                             P.mass = varargin{1}; 
                         end
@@ -70,13 +65,13 @@ classdef particle < anakin.point
                     end  
                 case 4 
                     if isa(varargin{end},'anakin.frame') % last is frame 
-                        P.c = varargin{4}.matrix * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{4}.c; 
+                        P.c = varargin{4}.matrix * anakin.vector(varargin{1},varargin{2},varargin{3}).c + varargin{4}.c; % coordinates, frame
                     else
                         Pt = anakin.particle(varargin{1},varargin{2},varargin{3},varargin{4},anakin.frame);
                         P.c = Pt.c;
                         P.mass = Pt.mass;
                     end   
-                case 5 % xyz, mass, frame
+                case 5 % mass, xyz, frame
                     P.c = varargin{5}.matrix * anakin.vector(varargin{2},varargin{3},varargin{4}).c + varargin{5}.c;
                     P.mass = varargin{1}; 
                 otherwise % other possibilities are not allowed
@@ -112,7 +107,7 @@ classdef particle < anakin.point
             if ~exist('S1','var')
                 S1 = anakin.frame; % default frame
             end
-            H = cross(anakin.vector(P)-anakin.vector(O), P.mass*P.vel(S1));
+            H = cross(anakin.vector(P)-anakin.vector(O), P.p(S1));
         end
         function T = T(P,S1) % kinetic energy in S1
             if ~exist('S1','var')
@@ -122,6 +117,9 @@ classdef particle < anakin.point
             if isa(T,'sym') % symbolic input
                 T = formula(simplify(T)); % simplify and force sym rather than symfun to allow indexing
             end
+        end
+        function inertia = inertia(P,S1) % inertia tensor of the particle with respect to the origin of S1
+            
         end
         function P_ = subs(P,variables,values) % particularize symbolic vector
             P_ = P;
