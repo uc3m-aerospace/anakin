@@ -52,6 +52,9 @@ classdef basis
                    varargin{i} = formula(varargin{i}); % enforce formula to allow indexing
                end
             end 
+            if ~isempty(varargin) && isa(varargin{end},'anakin.frame')
+                varargin{end} = varargin{end}.basis; % extract basis
+            end
             switch nargin
                 case 0 % no arguments 
                     return;    
@@ -61,6 +64,8 @@ classdef basis
                     if isa(varargin{end},'anakin.basis') 
                         if isa(varargin{1},'anakin.basis') % relative basis, basis
                             B.m = varargin{2}.m * varargin{1}.m;
+                        elseif isa(varargin{1},'anakin.frame') % relative frame, basis
+                            B.m = varargin{2}.m * varargin{1}.basis.m;
                         elseif numel(varargin{1}) == 4 % relative quaternions, basis
                             qq = varargin{1}; % quaternions with the scalar component last
                             mm = [qq(4)^2+qq(1)^2-qq(2)^2-qq(3)^2,     2*(qq(1)*qq(2)-qq(4)*qq(3)),     2*(qq(1)*qq(3)+qq(4)*qq(2)); % matrix whose columns are the components of the ijk vectors of B expressed in B1
@@ -99,6 +104,9 @@ classdef basis
                 value = formula(simplify(value)); % simplify and force sym rather than symfun to allow indexing
             end
             B.m = value;
+            try
+                B.m = double(B.m);
+            end
         end     
     end
     methods % overloads 
@@ -172,7 +180,10 @@ classdef basis
         end    
         function B_ = subs(B,variables,values) % particularize symbolic basis
             B_ = B;
-            B_.m = double(subs(B.m,variables,values));
+            B_.m = subs(B.m,variables,values);
+            try
+                B_.m = double(B_.m);
+            end
         end
     end
     methods % 3-dimensional-space functionality

@@ -79,7 +79,7 @@ classdef frame
         end
         function disp(S) % display
             disp('Frame with origin with canonical position:')
-            disp(S.origin.components)
+            disp(S.origin.pos.components)
             disp('and basis with canonical rotation matrix:')
             disp(S.basis.matrix)
         end

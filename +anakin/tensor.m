@@ -53,6 +53,8 @@ classdef tensor
                 c = c.c;
             elseif isa(c,'anakin.point')
                 c = c.pos.c;
+            elseif isa(c,'anakin.frame')
+                c = c.origin.pos.c;
             end 
             T.c = c;
             % change of basis
@@ -78,6 +80,9 @@ classdef tensor
             end
             % Assign
             T.c = reshape(value,[sc_,1,1]); % remove any singleton dimensions that may exist 
+            try
+                T.c = double(T.c);
+            end
         end
     end
     methods (Hidden = true) % overloads
@@ -285,11 +290,14 @@ classdef tensor
                 end
                 dT = anakin.tensor(diff(sym(T.components(B)),1),B);
             else
-                dT = anakin.tensor(diff(sym(T.components(B)),1));
+                dT = anakin.tensor(diff(sym(T.components),1));
             end            
         end
         function T = subs(T,variables,values) % particularize symbolic tensor
-            T.c = double(subs(T.c,variables,values));
+            T.c = subs(T.c,variables,values);
+            try
+                T.c = double(T.c);
+            end
         end        
     end    
     methods % vector functionality

@@ -11,7 +11,7 @@ where :
 - A0 is the default point (origin)
 - A is a point 
 - a is a vector
-- c is an array with the three vector components 
+- c is an array with the coordinates of the point
 - S1 is a frame. If given, all previous input as relative to that frame
    
 METHODS: 
