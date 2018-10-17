@@ -38,10 +38,10 @@ function test_creator(~) % Call creator without arguments
         end 
  
 
-        O = vector([xi,0,0]);
-        i = vector([cos(theta),sin(theta),0]);
-        j = vector([-sin(theta),cos(theta),0]);
-        k = vector([0,0,1]); 
+        O = tensor([xi,0,0]);
+        i = tensor([cos(theta),sin(theta),0]);
+        j = tensor([-sin(theta),cos(theta),0]);
+        k = tensor([0,0,1]); 
         B = basis(i,j,k); 
         S1 = frame;
 
@@ -52,21 +52,8 @@ function test_creator(~) % Call creator without arguments
 
         S = frame(O,B); % origin, basis. THIS IS THE RECOMMENDED WAY TO CREATE A FRAME
         S = frame([1,2,3],S1); % relative components of origin and frame 
-
-        S = frame(1,2,3); % x y z
-        S = frame(i,j,k); % i j k
-        S = frame([1,2,3],B,S1); % relative origin components, basis, frame  
-
-        S = frame(O,i,j,k); % origin, ijk
-        S = frame([1,2,3],i,j,k); % origin components, ijk
-        S = frame(1,2,3,B); % xyz, basis 
-        S = frame(1,2,3,S1); % xyz, frame
-        S = frame(i,j,k,S1); % ijk, frame
-
-        S = frame(1,2,3,B,S1); % xyz, basis, frame 
-        S = frame([1,2,3],i,j,k); % origin components, ijk, frame 
-
-        S = frame(1,2,3,i,j,k,S1); % xyz, ijk, frame        
+ 
+        S = frame([1,2,3],B,S1); % relative origin components, basis, frame   
     end
 end
 
@@ -76,8 +63,8 @@ function test_overloads(~) % overloaded operators
         syms t;
         syms theta(t) phi(t) xi(t) eta(t);
         assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real'), in(xi(t), 'real'), in(eta(t), 'real')]);    
-        O1 = vector([xi(t),0,0]);
-        O2 = vector([eta(t),xi(t)*eta(t),0]) + O1; % defined wrt O1
+        O1 = tensor([xi(t),0,0]);
+        O2 = tensor([eta(t),xi(t)*eta(t),0]) + O1; % defined wrt O1
         B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]); 
         B2 = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1],B1);     
         S1 = frame(O1,B1);
@@ -87,98 +74,22 @@ function test_overloads(~) % overloaded operators
         assert(S1~=S2);
     end
 end
-
-function test_posvelaccel(~) % Call position, velocity and acceleration wrt canonical reference frame
-    import anakin.*
-    if license('test','symbolic_toolbox') 
-        syms t;
-        syms theta(t) xi(t);
-        assume([in(t, 'real'), in(theta(t), 'real'), in(xi(t), 'real')]);    
-        O = point([xi(t),0,0]); 
-        B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);         
-        S = frame(O,B); 
-
-        assert(S.pos == vector([ xi;0;0]));
-        assert(S.vel == vector([ diff(xi(t), 1);0;0]));
-        assert(S.accel == vector([ diff(xi(t), 2);0;0]));
-    end
-end
-
-function test_omegaalpha(~) % Call angular velocity and acceleration wrt canonical reference frame
-    import anakin.*
-    if license('test','symbolic_toolbox') 
-        syms t;
-        syms theta(t) xi(t);
-        assume([in(t, 'real'), in(theta(t), 'real'), in(xi(t), 'real')]);    
-        O = vector([xi(t),0,0]);
-        B = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1]);
-        S = frame(O,B); 
-
-        assert(S.omega == vector([ 0;0; diff(theta(t), 1)]));
-        assert(S.alpha == vector([ 0;0; diff(theta(t), 2)]));
-    end
-end
-
-function test_omegaalpha2(~) % Call angular velocity, angular acceleration wrt a second reference frame
-    import anakin.*
-    if license('test','symbolic_toolbox') 
-        syms t;
-        syms theta(t) phi(t) xi(t) eta(t);
-        assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real'), in(xi(t), 'real'), in(eta(t), 'real')]);    
-        O1 = vector([xi(t),0,0]);
-        O2 = vector([eta(t),xi(t)*eta(t),0]) + O1; % defined wrt O1
-        B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]); 
-        B2 = basis([cos(theta),sin(theta),0],[-sin(theta),cos(theta),0],[0;0;1],B1); % defined wrt B1
-        S1 = frame(O1,B1);
-        S2 = frame(O2,B2);
-
-        assert(S2.omega(S1) == vector([ 0;0; diff(theta(t), 1)],B1));
-        assert(S2.alpha(S1) == vector([ 0;0; diff(theta(t), 2)],B1));
-    end
-end
-
-function test_origin(~) % origin point
-    import anakin.*
-    S = frame(1,2,3);
-    
-    origin = S.origin;
-end
-
+  
 function test_subs(~) % subs
     import anakin.*
     if license('test','symbolic_toolbox') 
         syms t;
         syms phi(t) xi(t);
         assume([in(t, 'real'), in(phi(t), 'real'), in(xi(t), 'real')]);    
-        O1 = vector([xi(t),0,0]); 
+        O1 = tensor([xi(t),0,0]); 
         B1 = basis([1,0,0],[0,cos(phi),sin(phi)],[0,-sin(phi),cos(phi)]);
         S1 = frame(O1,B1); 
 
         S1_ = S1.subs({t,phi,xi},{2,2*t,3*t});
     end
 end
-
-function test_rotated_displaced(~) % create rotated and displaced frames
-    import anakin.*
-    if license('test','symbolic_toolbox') 
-        syms t;
-        syms mypsi(t) theta(t) phi(t) xi(t);
-        assume([in(t, 'real'), in(mypsi(t), 'real'), in(theta(t), 'real'), in(phi(t), 'real'), in(xi(t), 'real')]);
-        S0 = frame;
-
-        Sx = S0.rotatex(pi/6); % with numeric value
-        Sx = S0.rotatex(theta); % with symbolic expression
-        Sy = S0.rotatey(theta);
-        Sz = S0.rotatez(theta);
-
-        S1 = S0.rotatez(mypsi).rotatex(theta).rotatez(phi);    
-
-        Sd = S0.displace(vector(1,2,3));
-    end
-end
-
  
-function test_plot(~) % vector plotting  
+function test_plot(~) % tensor plotting  
     import anakin.*
     S = frame;
     

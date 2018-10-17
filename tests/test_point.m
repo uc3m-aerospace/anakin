@@ -26,24 +26,22 @@ function test_creator(~) % Call creator without arguments
     A = point; 
     A = point(A); 
     A = point([1;2;0]); % coordinates in canonical reference frame    
-    A = point([1,2,0]); % coordinates in canonical vector basis, row array form    
-    A = point(vector([1;2;0])); % vector
-    A = point(1,2,0); % coordinates in canonical vector basis, independently given
+    A = point([1,2,0]); % coordinates in canonical tensor basis, row array form    
+    A = point(tensor([1;2;0])); % tensor 
     A = point([1;2;0],S1); % coordinates in another basis, column array form
     A = point([1,2,0],S1); % coordinates in another basis, row array form    
-    A = point(vector([1;2;0]),S1); % vector    
-    A = point(1,2,0,S1); % coordinates in another basis, independently given
+    A = point(tensor([1;2;0]),S1); % tensor     
 end
 
 function test_coordinates(~) % call coordinates, x, y, z
     import anakin.*
     S1 = frame([2,2,2],[0,1,0;-1,0,0;0,0,1]); 
     
-    A = point(1,2,3,S1); 
+    A = point([1,2,3],S1); 
     assert(all(A.coordinates(S1) == [1;2;3]));
-    assert(A.x(S1) == 1);
-    assert(A.y(S1) == 2);
-    assert(A.z(S1) == 3);
+    assert(A.x(1,S1) == 1);
+    assert(A.x(2,S1) == 2);
+    assert(A.x(3,S1) == 3);
 end
 
 function test_posvelaccel(~) % Call position, velocity and acceleration wrt canonical reference frame
@@ -54,24 +52,24 @@ function test_posvelaccel(~) % Call position, velocity and acceleration wrt cano
         assume([in(t, 'real'), in(theta(t), 'real'), in(xi(t), 'real')]);
         B0 = basis;
         S0 = frame; 
-        o = vector(1,t,cos(theta));
+        o = tensor([1,t,cos(theta)]);
         B = B0.rotatex(theta);
         S1 = frame(point(o),B);
 
-        a = vector(t,sin(theta),xi,B);
+        a = tensor([t,sin(theta),xi],B);
         A = point(o+a);
         
-        assert(A.pos(S1) == vector([t;sin(theta);xi],S1));
-        assert(A.vel(S1) == vector([1;cos(theta)*diff(theta,t);diff(xi)],S1));
-        assert(A.accel(S1) == vector([0; cos(theta(t))*diff(theta(t), 2) - sin(theta(t))*diff(theta(t), t)^2; diff(xi(t), 2)],S1));
+        assert(A.pos(S1) == tensor([t;sin(theta);xi],S1.basis));
+        assert(A.vel(S1) == tensor([1;cos(theta)*diff(theta,t);diff(xi)],S1.basis));
+        assert(A.accel(S1) == tensor([0; cos(theta(t))*diff(theta(t), 2) - sin(theta(t))*diff(theta(t), t)^2; diff(xi(t), 2)],S1.basis));
 
         assert(A.pos(S0) == o + a); 
-        assert(A.vel(S0) == o.dt(S0) + a.dt(S0));
-        assert(A.accel(S0) == o.dt(S0).dt(S0) + a.dt(S0).dt(S0));
+        assert(A.vel(S0) == o.dt(S0.basis) + a.dt(S0.basis));
+        assert(A.accel(S0) == o.dt(S0.basis).dt(S0.basis) + a.dt(S0.basis).dt(S0.basis));
     end
 end 
 
-function test_subs(~) % Particularize a symbolic vector
+function test_subs(~) % Particularize a symbolic tensor
     import anakin.*
     if license('test','symbolic_toolbox') 
         syms t;
@@ -84,7 +82,7 @@ function test_subs(~) % Particularize a symbolic vector
     end
 end
   
-function test_plot(~) % vector plotting 
+function test_plot(~) % tensor plotting 
     import anakin.*
     A = point([1,5,3]); 
     

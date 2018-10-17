@@ -20,6 +20,7 @@ where:
 - B1 is a basis. If given, all previous input as relative to that basis
  
 METHODS:
+* spacedim: returns dimensionality of space
 * components: returns the components of the tensor in a chosen basis
 * x: returns a single component of the tensor in a chosen basis
 * product: general product of tensors (with or without contraction)
@@ -50,10 +51,15 @@ classdef tensor
                 c = 0; % default tensor
             elseif isa(c,'anakin.tensor')
                 c = c.c;
+            elseif isa(c,'anakin.point')
+                c = c.pos.c;
             end 
             T.c = c;
             % change of basis
-            if exist('B','var')         
+            if exist('B','var')  
+                if isa(B,'anakin.frame')
+                    B = B.basis; % extract basis
+                end
                 for i = 1:T.ndims
                     T.c = anakin.utilities.product(T.c,B.matrix,[1,T.ndims+2]);
                 end 
@@ -90,11 +96,7 @@ classdef tensor
         end
         function n = ndims(T) % number of non-singleton dimensions 
             n = length(size(T));
-        end
-        function n = spacedim(T) % dimensions of space (for first tensor dimension)
-            s = [size(T),3]; % if size is empty (scalar case), default to 3.
-            n = s(1); 
-        end
+        end        
         function value = eq(T1,T2) % overload ==
             if ~isa(T1,'anakin.tensor'); T1 = anakin.tensor(T1); end % ensure tensor
             if ~isa(T2,'anakin.tensor'); T2 = anakin.tensor(T2); end
@@ -242,9 +244,16 @@ classdef tensor
         end
     end 
     methods % general functionality
+        function n = spacedim(T) % dimensions of space (for first tensor dimension)
+            s = [size(T),3]; % if size is empty (scalar case), default to 3.
+            n = s(1); 
+        end
         function c = components(T,B) % return components of T in basis B
             c = T.c; % if no basis is given, use the canonical vector basis
             if exist('B','var')
+                if isa(B,'anakin.frame')
+                    B = B.basis; % extract basis
+                end
                 B = inv(B.matrix);
                 for idim = 1:T.ndims
                     c = anakin.utilities.product(c,B,[idim,T.ndims+2]);
@@ -270,10 +279,14 @@ classdef tensor
             T3 = anakin.tensor(anakin.utilities.product(T1.c,T2.c,varargin{:})); 
         end
         function dT = dt(T,B) % time derivative with respect to basis B. Requires symbolic tensor
-            if ~exist('B','var')
-                B = anakin.basis(eye(T.spacedim)); % canonical vector basis
-            end
-            dT = anakin.tensor(diff(sym(T.components(B)),1),B);
+            if exist('B','var')
+                if isa(B,'anakin.frame')
+                    B = B.basis; % extract basis
+                end
+                dT = anakin.tensor(diff(sym(T.components(B)),1),B);
+            else
+                dT = anakin.tensor(diff(sym(T.components(B)),1));
+            end            
         end
         function T = subs(T,variables,values) % particularize symbolic tensor
             T.c = double(subs(T.c,variables,values));
@@ -333,7 +346,11 @@ classdef tensor
             if mod(nargin,2) == 1 % no origin vector is given
                 O = anakin.tensor([0;0;0]); % null vector
             else
-                O = anakin.tensor(varargin{1});
+                if isa(varargin{1},'anakin.point')
+                    O = varargin{1}.pos;
+                else
+                    O = anakin.tensor(varargin{1});
+                end
                 if O.ndims ~= 1 || O.spacedim ~= 3
                     error('This functionality is only available for vectors in 3D space');
                 end

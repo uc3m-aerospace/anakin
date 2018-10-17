@@ -20,6 +20,7 @@ where:
 - B1 is a basis. If given, all previous input as relative to that basis
 
 METHODS:
+* spacedim: returns dimensionality of space
 * matrix: transformation matrix to another basis 
 * e: returns the i-th vector of the basis
 * rotaxis, rotangle: returns unit vector and angle of rotation of B wrt
@@ -140,11 +141,14 @@ classdef basis
             B1.m = B1.m.';
         end  
         function disp(B) % display
-            disp('Vector basis with canonical rotation matrix:')
+            disp('Basis with canonical rotation matrix:')
             disp(B.m)
         end
     end
     methods % general functionality
+        function spacedim = spacedim(B) % number of dimensions of space
+            spacedim = length(B.m(:,1));            
+        end
         function matrix = matrix(B,B1) % transformation matrix to another basis: [a(in B1)] = m * [a(in B)]
             if ~exist('B1','var')
                 matrix = B.m; % if no basis is given, use the canonical vector basis
@@ -154,10 +158,7 @@ classdef basis
                     matrix = formula(simplify(matrix));
                 end
             end            
-        end
-        function spacedim = spacedim(B) % number of dimensions of space
-            spacedim = length(B.m(:,1));            
-        end            
+        end        
         function e = e(B,i) % i-th vector of the basis
              e = anakin.tensor(B.m(:,i));
         end
