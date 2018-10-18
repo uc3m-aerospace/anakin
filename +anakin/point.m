@@ -110,10 +110,12 @@ classdef point
     end 
     methods % plotting
         function h = plot(A,varargin) % plot
-            cc = A.pos0.components;
-            hold on
-            h = line(cc(1),cc(2),cc(3),'color','k','marker','.','linestyle','none');
-            hold off
+            if A.spacedim ~= 3
+                error('This functionality is only available for points in 3D space');
+            end
+            c = A.pos0.components; 
+            h = line;
+            set(h,'XData',c(1),'YData',c(2),'ZData',c(3),'color','k','marker','.','linestyle','none');
             if ~isempty(varargin)
                 set(h,varargin{:}); % set options stored in varargin
             end

@@ -17,12 +17,15 @@ where:
 - S1 is a frame. If given, all previous input as relative to that frame
 
 PROPERTIES:
-* mass
+* mass: the mass of the particle
+* forces: a cell array with all the vector forces acting on the particle
 
 METHODS: 
 * p: linear momentum in a given reference frame
 * H: angular momentum about a point in a given reference frame
 * T: kinetic energy in a given reference frame
+* equations: returns a vector of (symbolic) equations, m*a = F, projected
+  along the vectors of one basis
 * inertia: tensor of inertia about a point
 * subs: takes values of the symbolic unknowns and returns a particle
   object which is purely numeric
@@ -33,6 +36,7 @@ Mario Merino <mario.merino@uc3m.es>
 classdef particle < anakin.point 
     properties  
         mass anakin.tensor = anakin.tensor(1); % mass of the object
+        forces cell = {}; % cell array with all forces acting on the particle
     end
     methods % creation
         function P = particle(varargin) % constructor 
@@ -63,7 +67,7 @@ classdef particle < anakin.point
                     error('Wrong number of arguments in particle');
             end       
         end 
-        function P = set.mass(P,value) % on setting c
+        function P = set.mass(P,value) % on setting mass
             P.mass = value;
             if isa(P.mass,'sym') % symbolic input
                 P.mass = formula(simplify(P.mass)); % simplify and force sym rather than symfun to allow indexing
@@ -72,12 +76,23 @@ classdef particle < anakin.point
                 P.mass = double(P.mass);
             end
         end
+        function P = set.forces(P,value) % on setting forces
+            if ~iscell(value) % validate input
+                value = {value};
+            end
+            for i=1:length(value)
+                if ~isa(value{i},'anakin.tensor') 
+                    error('The forces must be supplied in a cell array of anakin.tensor vectors');
+                end
+            end
+            P.forces = value; 
+        end
     end 
-    methods
+    methods(Hidden = true) % overloads
         function disp(P) % display
             disp('Particle with mass:')
             disp(P.mass.components)            
-            disp('canonical position vector components:')
+            disp('And canonical position vector components:')
             disp(P.pos.components)            
         end
     end
@@ -106,6 +121,24 @@ classdef particle < anakin.point
                 vel = P.vel.components;
             end
             T = (P.mass/2) * dot(vel,vel); 
+        end
+        function eqs = equations(P,B1) % returns vector of equations of motion projected in basis B1
+            MA = P.mass*P.accel;
+            F = anakin.tensor([0;0;0]); % allocate;
+            for i=1:length(P.forces)
+                F = F + P.forces{i};
+            end
+            if ~exist('B1','var')
+                B1 = anakin.basis;
+            elseif isa(B1,'anakin.frame') 
+                B1 = B1.basis; % extract basis
+            end
+            eqs = sym(zeros(B1.spacedim,1));
+            for i=1:B1.spacedim
+                ma = MA * B1.e(i);
+                f = F * B1.e(i);
+                eqs(i) = (ma.components == f.components);
+            end                
         end
         function inertia = inertia(P,O) % inertia tensor of the particle with respect to point O
             if exist('O','var')
