@@ -22,9 +22,11 @@ the example live scripts.
 
 ## Quick usage guide
 
-Anakin full documentation can be found in the [wiki](https://github.com/mariomerinomartinez/anakin/wiki)
-of this repository. The `/examples` subdirectory includes several live scripts that illustrate the
-usage of Anakin.
+Anakin documentation can be found in the `/docs` subdirectory. A live script is
+provided for each Anakin class, illustrating its usage and capabilities.
+The `/problems` subdirectory includes live scripts that solve the problems
+of the course 'Mechanics Applied to Aerospace Engineering' of the BSc program
+in Aerospace Engineering at UC3M.
 
 To use Anakin, t is recommended that you first import the Anakin package with
 
@@ -34,17 +36,15 @@ import anakin.*
 
 If you do not, then you will need to access
 all classes with the `anakin.` prefix,
-e.g.  `anakin.vector`.
+e.g.  `anakin.tensor`.
 
 Currently Anakin defines the following classes:
 
-* `vector`: vectors
+* `tensor`: genral class for scalars, vectors, 2nd-order tensors, and more
 * `basis`: vector bases
 * `frame`: reference frames
 * `point`: geometric points
 * `particle`: point particles
-* `tensor`: tensors
-* `inertia`: inertia tensors
 * `body`: rigid bodies
 
 The description of the properties and methods of each class is included in the
