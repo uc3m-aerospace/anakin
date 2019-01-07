@@ -43,11 +43,11 @@ classdef point
             end       
         end 
     end 
-    methods % overloads
+    methods (Hidden = true) % overloads
         function value = eq(A1,A2) % overload ==
             value = (A1.pos0 == A2.pos0);
         end
-        function value = ne(A1,A2)
+        function value = ne(A1,A2) % overload =~
             value = ~eq(A1,A2);
         end
         function disp(A) % display
@@ -78,29 +78,29 @@ classdef point
             A_ = A;
             A_.pos0 = A.pos0 + a;
         end    
-        function rO_1 = pos(A,S1) % Returns the position vector of the point with respect to reference frame S1
+        function r = pos(A,S1) % Returns the position vector of the point with respect to reference frame S1
             if exist('S1','var') % If no S1 is given, assume the canonical reference frame
-                rO_1 = A.pos0 - S1.origin;
+                r = A.pos0 - S1.origin;
             else
-                rO_1 = A.pos0;
+                r = A.pos0;
             end 
         end        
-        function vO_1 = vel(A,S1) % Returns the velocity vector of the point with respect to reference frame S1
+        function v = vel(A,S1) % Returns the velocity vector of the point with respect to reference frame S1
             if exist('S1','var') % If no S1 is given, assume the canonical reference frame
-                rO_1 = A.pos(S1);
-                vO_1 = rO_1.dt(S1.basis); 
+                r = A.pos(S1);
+                v = r.dt(S1.basis); 
             else
-                rO_1 = A.pos;
-                vO_1 = rO_1.dt; 
+                r = A.pos;
+                v = r.dt; 
             end                        
         end  
-        function aO_1 = accel(A,S1) % Returns the  acceleration vector of the point with respect to reference frame S1
+        function a = accel(A,S1) % Returns the  acceleration vector of the point with respect to reference frame S1
             if exist('S1','var') % If no S1 is given, assume the canonical reference frame
-                vO_1 = A.vel(S1);
-                aO_1 = vO_1.dt(S1.basis);
+                v = A.vel(S1);
+                a = v.dt(S1.basis);
             else
-                vO_1 = A.vel;
-                aO_1 = vO_1.dt;
+                v = A.vel;
+                a = v.dt;
             end
         end
         function A_ = subs(A,variables,values) % Particularize symbolic frame

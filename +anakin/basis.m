@@ -109,7 +109,7 @@ classdef basis
             end
         end     
     end
-    methods % overloads 
+    methods (Hidden = true) % overloads 
         function value = eq(B1,B2) % overload ==
             if isa(B1.m,'sym') || isa(B1.m,'sym') % symbolic inputs
                 value = isAlways(B1.m==B2.m,'Unknown','false'); % In case of doubt, false

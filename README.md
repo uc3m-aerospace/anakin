@@ -44,8 +44,7 @@ Currently Anakin defines the following classes:
 * `basis`: vector bases
 * `frame`: reference frames
 * `point`: geometric points
-* `particle`: point particles
-* `body`: rigid bodies
+* `particle`: point particles 
 
 The description of the properties and methods of each class is included in the
 header comments of each code file.
