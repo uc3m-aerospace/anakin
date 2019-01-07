@@ -1,5 +1,7 @@
 # Anakin
 
+[![DOI](https://zenodo.org/badge/143483510.svg)](https://zenodo.org/badge/latestdoi/143483510)
+
 **Anakin** (Aerospace eNgineer's Assistant for Kinematics, Inertia and dyNamics)
 is a Matlab framework that defines a number of classes to facilitate modeling and
 solving Classical Mechanics problems in Aerospace Engineering and other disciplines.
@@ -69,6 +71,8 @@ department of Universidad Carlos III de Madrid. It is released as open
 source in the hope that it will be useful to other people. If you find it
 useful and/or use it in any of your works, we kindly ask you to acknowledge it
 by citing this repository.
+ 
+Mario Merino (2018). [https://github.com/uc3m-aerospace/anakin](https://github.com/uc3m-aerospace/anakin): First release [DOI:10.5281/zenodo.2533336](https://doi.org/10.5281/zenodo.2533336)
 
 ## License
 
