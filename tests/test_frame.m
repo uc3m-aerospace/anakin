@@ -46,14 +46,8 @@ function test_creator(~) % Call creator without arguments
         S1 = frame;
 
         S = frame(frame); % repetition    
-        S = frame(O); % origin         
-        S = frame(B); % basis
-        S = frame([1,2,3]); % origin components 
-
-        S = frame(O,B); % origin, basis. THIS IS THE RECOMMENDED WAY TO CREATE A FRAME
-        S = frame([1,2,3],S1); % relative components of origin and frame 
- 
-        S = frame([1,2,3],B,S1); % relative origin components, basis, frame   
+        
+        S = frame(O,B); % origin, basis. THIS IS THE RECOMMENDED WAY TO CREATE A FRAME  
     end
 end
 

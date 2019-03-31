@@ -24,13 +24,13 @@ the example live scripts.
 
 ## Quick usage guide
 
-Anakin documentation can be found in the `/docs` subdirectory. A live script is
-provided for each Anakin class, illustrating its usage and capabilities.
+Anakin documentation can be found in the `/docs` subdirectory. A live script describes
+each Anakin's class, illustrating its usage and capabilities.
 The `/problems` subdirectory includes live scripts that solve the problems
 of the course 'Mechanics Applied to Aerospace Engineering' of the BSc program
 in Aerospace Engineering at UC3M.
 
-To use Anakin, t is recommended that you first import the Anakin package with
+To use Anakin, t is recommended that you first import the whole Anakin package with
 
 ```Matlab
 import anakin.*
@@ -38,18 +38,20 @@ import anakin.*
 
 If you do not, then you will need to access
 all classes with the `anakin.` prefix,
-e.g.  `anakin.tensor`.
+e.g.  `anakin.basis`.
 
 Currently Anakin defines the following classes:
 
-* `tensor`: genral class for scalars, vectors, 2nd-order tensors, and more
+* `tensor`: genral class for scalars, vectors, and tensors
 * `basis`: vector bases
 * `frame`: reference frames
 * `point`: geometric points
 * `particle`: point particles 
+* `body`: rigid bodies
 
 The description of the properties and methods of each class is included in the
-header comments of each code file.
+header comments of each code file. For more information and example usages,
+see the live scripts in the `/docs` directory.
 
 ### Testing
 
@@ -70,7 +72,7 @@ This program is the result of substantial effort at the Aerospace Engineering
 department of Universidad Carlos III de Madrid. It is released as open
 source in the hope that it will be useful to other people. If you find it
 useful and/or use it in any of your works, we kindly ask you to acknowledge it
-by citing this repository.
+by citing it:
  
 Mario Merino (2018). [https://github.com/uc3m-aerospace/anakin](https://github.com/uc3m-aerospace/anakin): First release [DOI:10.5281/zenodo.2533336](https://doi.org/10.5281/zenodo.2533336)
 

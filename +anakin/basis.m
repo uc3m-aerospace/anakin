@@ -4,7 +4,7 @@ basis: class to define orthonormal, right-handed vector bases.
 
 SYNTAX:
 B0 = anakin.basis();  % returns default object 
-B  = anakin.basis(B|m|((a|c),(a|c),(a|c))|q|(axis,angle),<B1>);
+B  = anakin.basis(<B|m|((a|c),(a|c),(a|c))|q|(axis,angle)>,<B1>);
 where:
 - <> denotes optional arguments
 - | denotes alternative arguments
@@ -14,7 +14,7 @@ where:
 - m  is a matrix
 - a is a vector (1st-order tensor)
 - c is an array with the three vector components 
-- q are quaternions
+- q are quaternions (scalar last)
 - axis is the unit vector of the axis of rotation
 - angle is angle of rotation about axis
 - B1 is a basis. If given, all previous input as relative to that basis
@@ -51,10 +51,10 @@ classdef basis
                if isa(varargin{i},'sym')
                    varargin{i} = formula(varargin{i}); % enforce formula to allow indexing
                end
-            end 
-            if ~isempty(varargin) && isa(varargin{end},'anakin.frame')
-                varargin{end} = varargin{end}.basis; % extract basis
-            end
+               if isa(varargin{i},'anakin.frame')
+                   varargin{i} = varargin{i}.basis; % take only basis
+               end
+            end  
             switch nargin
                 case 0 % no arguments 
                     return;    
@@ -63,9 +63,7 @@ classdef basis
                 case 2 
                     if isa(varargin{end},'anakin.basis') 
                         if isa(varargin{1},'anakin.basis') % relative basis, basis
-                            B.m = varargin{2}.m * varargin{1}.m;
-                        elseif isa(varargin{1},'anakin.frame') % relative frame, basis
-                            B.m = varargin{2}.m * varargin{1}.basis.m;
+                            B.m = varargin{2}.m * varargin{1}.m; 
                         elseif numel(varargin{1}) == 4 % relative quaternions, basis
                             qq = varargin{1}; % quaternions with the scalar component last
                             mm = [qq(4)^2+qq(1)^2-qq(2)^2-qq(3)^2,     2*(qq(1)*qq(2)-qq(4)*qq(3)),     2*(qq(1)*qq(3)+qq(4)*qq(2)); % matrix whose columns are the components of the ijk vectors of B expressed in B1
@@ -99,13 +97,15 @@ classdef basis
                     error('Wrong number of arguments in basis');
             end  
         end 
-        function B = set.m(B,value) % on setting m 
+        function B = set.m(B,value) % on setting m
             if isa(value,'sym') % symbolic input
                 value = formula(simplify(value)); % simplify and force sym rather than symfun to allow indexing
             end
             B.m = value;
             try
                 B.m = double(B.m);
+            catch
+                % pass
             end
         end     
     end
@@ -149,7 +149,7 @@ classdef basis
             B1.m = B1.m.';
         end  
         function disp(B) % display
-            disp('Basis with canonical rotation matrix:')
+            disp('Basis with rotation matrix:')
             disp(B.m)
         end
     end
@@ -172,9 +172,9 @@ classdef basis
         end
         function isorthonormal = isorthonormal(B) % all vectors are unitary and mutually orthogonal
             if isa(B.m,'sym') % symbolic inputs
-                isorthonormal = isAlways(B.m' * B.m == eye(3),'Unknown','false'); % In case of doubt, false
+                isorthonormal = isAlways(B.m' * B.m == eye(B.spacedim),'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                isorthonormal = (abs(B.m' * B.m - eye(3))<eps(max(abs(B.m(:))))); 
+                isorthonormal = (abs(B.m' * B.m - eye(B.spacedim))<eps(max(abs(B.m(:))))); 
             end 
             isorthonormal = all(isorthonormal(:));
         end    
@@ -183,6 +183,8 @@ classdef basis
             B_.m = subs(B.m,variables,values);
             try
                 B_.m = double(B_.m);
+            catch
+                % pass
             end
         end
     end

@@ -4,23 +4,24 @@ particle: class to model a point particle.
 
 SYNTAX:
 P0 = anakin.particle();  % returns default object  
-P  = anakin.particle(<mass>,<P|A|a|c|>,<S1>);
+P  = anakin.particle(<P>|(<<mass>,A|a>),<S1>);
 where:
 - <> denotes optional arguments
 - | denotes alternative arguments
 - P0 is the default particle (mass 1, located at the origin)
-- P  is a particle 
-- mass is the object mass
+- P  is a particle  
+- mass is a scalar
 - A is a point
-- a is a vector
-- c is an array with the three vector components 
+- a is a vector 
 - S1 is a frame. If given, all previous input as relative to that frame
 
 PROPERTIES:
 * mass: the mass of the particle
+* point: the point where the particle is
 * forces: a cell array with all the vector forces acting on the particle
 
 METHODS: 
+* mass: the mass of the particle
 * p: linear momentum in a given reference frame
 * H: angular momentum about a point in a given reference frame
 * T: kinetic energy in a given reference frame
@@ -33,58 +34,37 @@ METHODS:
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
 %}
-classdef particle
-    properties  
-        mass anakin.tensor = anakin.tensor(1); % mass of the object
-        point anakin.point = anakin.point; % point where the object is
+classdef particle < anakin.point
+    properties (Hidden = true, Access = protected)  
+        M anakin.tensor = anakin.tensor(1); % mass of the object
     end
-    properties % extensions
+    properties
         forces cell = {}; % cell array with all forces (vectors) acting on the object
     end
     methods % creation
-        function P = particle(varargin) % constructor 
+        function P = particle(varargin) % constructor
             switch nargin
                 case 0 % no arguments
                     return;
-                case 1  
-                    Pt = anakin.particle(varargin{1},anakin.frame);
-                    P.mass = Pt.mass;
-                    P.point = Pt.point; 
-                case 2  
-                    if isa(varargin{end},'anakin.frame') % last is frame
-                        if isa(varargin{1},'anakin.point') || isa(varargin{1},'anakin.tensor') || numel(varargin{1}) == 3 % (vector or components), frame
-                            P.point = anakin.point(varargin{2}.basis.matrix * anakin.tensor(varargin{1}).components + varargin{2}.origin.coordinates);
-                        else % mass, frame                            
-                            P.mass = anakin.tensor(varargin{1});
-                            P.point = varargin{2}.origin;
-                        end
-                    else
-                        Pt = anakin.particle(varargin{1},varargin{2},anakin.frame);
-                        P.mass = Pt.mass;
-                        P.point = Pt.point; 
-                    end 
-                case 3   
-                    P.point = anakin.point(varargin{3}.basis.matrix * anakin.tensor(varargin{2}).components + varargin{3}.origin.coordinates);
-                    P.mass = anakin.tensor(varargin{1});
+                case 1 % particle                  
+                    P.M = varargin{1}.M; 
+                    P.v = varargin{1}.v; 
+                case 2 % mass, vector 
+                    P.M = anakin.tensor(varargin{1}); 
+                    P.v = anakin.tensor(varargin{2});
                 otherwise % other possibilities are not allowed
                     error('Wrong number of arguments in particle');
             end       
-        end 
-        function P = set.mass(P,value) % on setting mass
-            P.mass = value;
-            if isa(P.mass,'sym') % symbolic input
-                P.mass = formula(simplify(P.mass)); % simplify and force sym rather than symfun to allow indexing
-            end
-            try
-                P.mass = double(P.mass);
-            end
+        end  
+        function P = set.M(P,value) % on setting M
+            P.M = anakin.tensor(value); 
         end
         function P = set.forces(P,value) % on setting forces
-            if ~iscell(value) % validate input
+            if ~iscell(value) % ensure cell array
                 value = {value};
             end
-            for i=1:length(value)
-                if ~isa(value{i},'anakin.tensor') 
+            for j=1:length(value) % validate input
+                if ~isa(value{j},'anakin.tensor') 
                     error('The forces must be supplied in a cell array of anakin.tensor vectors');
                 end
             end
@@ -93,46 +73,57 @@ classdef particle
     end 
     methods (Hidden = true) % overloads
         function value = eq(P1,P2) % overload ==
-            value = (P1.point == P2.point) && (P1.mass == P2.mass);
+            value = (P1.M == P2.M) && (P1.v == P2.v);
         end
         function value = ne(P1,P2) % overload =~
             value = ~eq(P1,P2);
         end
         function disp(P) % display
-            disp('Particle with mass:')
-            disp(P.mass.components)            
-            disp('And canonical coordinates:')
-            disp(P.point.coordinates)            
+            disp('Point particle with mass:')
+            disp(P.M.components)            
+            disp('And coordinates:')
+            disp(P.coordinates)            
         end
     end
     methods % general functionality 
+        function mass = mass(P) % mass of the particle
+            mass = P.M;
+        end
         function p = p(P,S1) % linear momentum in S1
             if exist('S1','var')
-                p = P.mass*P.point.vel(S1);
+                p = P.M*P.vel(S1);
             else
-                p = P.mass*P.point.vel;
+                p = P.M*P.vel;
             end            
         end
-        function H = H(P,O,S1) % angular momentum about O in S1
+        function H = H(P,O,S1) % angular momentum about a point O in S1
             if ~exist('O','var')
                 O = anakin.point; % default point
             end
             if exist('S1','var')
-                H = cross(P.point.pos0-O.pos0, P.p(S1));
+                H = cross(P.pos-O.pos, P.p(S1));
             else
-                H = cross(P.point.pos0-O.pos0, P.p);
+                H = cross(P.pos-O.pos, P.p);
             end            
         end
         function T = T(P,S1) % kinetic energy in S1
             if exist('S1','var')
-                vel = P.point.vel(S1).components;
+                vel = P.vel(S1).components;
             else
-                vel = P.point.vel.components;
+                vel = P.vel.components;
             end
-            T = (P.mass/2) * dot(vel,vel); 
+            T = (P.M/2) * norm(vel)^2; 
+        end
+        function inertia = inertia(P,O) % inertia tensor of the particle with respect to point O
+            if exist('O','var')
+                r = P.pos - O.pos;
+                inertia = P.M * (norm(r)^2 * anakin.tensor(eye(3)) - product(r,r));
+            else
+                inertia = anakin.tensor([0,0,0;0,0,0;0,0,0]); % no inertia about the particle itself
+            end            
         end
         function eqs = equations(P,B1) % returns vector of equations of motion projected in basis B1
-            MA = P.mass*P.point.accel;
+            p = P.p.dt;
             F = anakin.tensor([0;0;0]); % allocate;
             for i=1:length(P.forces)
                 F = F + P.forces{i};
@@ -142,25 +133,17 @@ classdef particle
             elseif isa(B1,'anakin.frame') 
                 B1 = B1.basis; % extract basis
             end
-            eqs = sym(zeros(B1.spacedim,1));
-            for i=1:B1.spacedim
-                ma = MA * B1.e(i);
-                f = F * B1.e(i);
-                eqs(i) = (ma.components == f.components);
+            eqs = sym([0;0;0]); % allocate
+            for i=1:3
+                p_ = p * B1.e(i);
+                F_ = F * B1.e(i);
+                eqs(i) = (p_.components == F_.components);
             end                
         end
-        function inertia = inertia(P,O) % inertia tensor of the particle with respect to point O
-            if exist('O','var')
-                r = P.point.coordinates - O.coordiantes;
-            else
-                r = P.point.coordinates;
-            end
-            inertia = P.mass * (norm(r)^2 * anakin.tensor(eye(3)) - product(r,r));
-        end
-        function P_ = subs(P,variables,values) % particularize symbolic vector
+        function P_ = subs(P,variables,values) % particularize symbolic particle
             P_ = P;
-            P_.point = P.point.subs(variables,values);
-            P_.mass = P.mass.subs(variables,values);
+            P_.v = P.v.subs(variables,values);
+            P_.M = P.M.subs(variables,values);
         end
     end      
 end

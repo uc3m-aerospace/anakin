@@ -21,27 +21,25 @@ end
  
 function test_creator(~) % Call creator without arguments
     import anakin.*
-    S1 = frame([0,1,0;-1,0,0;0,0,1]); 
+    S1 = frame([3;3;3],[0,1,0;-1,0,0;0,0,1]); 
+    a = tensor([1;2;0]);
     
     A = point; 
     A = point(A); 
-    A = point([1;2;0]); % coordinates in canonical reference frame    
-    A = point([1,2,0]); % coordinates in canonical tensor basis, row array form    
-    A = point(tensor([1;2;0])); % tensor 
-    A = point([1;2;0],S1); % coordinates in another basis, column array form
-    A = point([1,2,0],S1); % coordinates in another basis, row array form    
-    A = point(tensor([1;2;0]),S1); % tensor     
+    A = point(a); % tensor  
 end
 
 function test_coordinates(~) % call coordinates, x, y, z
     import anakin.*
-    S1 = frame([2,2,2],[0,1,0;-1,0,0;0,0,1]); 
+    S1 = frame(tensor([2,2,2]),basis([0,1,0;-1,0,0;0,0,1])); 
+    a = tensor([1,2,3]);
     
-    A = point([1,2,3],S1); 
-    assert(all(A.coordinates(S1) == [1;2;3]));
-    assert(A.x(1,S1) == 1);
-    assert(A.x(2,S1) == 2);
-    assert(A.x(3,S1) == 3);
+    A = point(a); 
+    temp = (S1.basis.matrix)\(a.components-S1.pos.components);
+    assert(all(A.coordinates(S1) == temp));
+    assert(A.x(1,S1) == temp(1));
+    assert(A.x(2,S1) == temp(2));
+    assert(A.x(3,S1) == temp(3));
 end
 
 function test_posvelaccel(~) % Call position, velocity and acceleration wrt canonical reference frame
@@ -54,7 +52,7 @@ function test_posvelaccel(~) % Call position, velocity and acceleration wrt cano
         S0 = frame; 
         o = tensor([1,t,cos(theta)]);
         B = B0.rotatex(theta);
-        S1 = frame(point(o),B);
+        S1 = frame(o,B);
 
         a = tensor([t,sin(theta),xi],B);
         A = point(o+a);
@@ -75,7 +73,7 @@ function test_subs(~) % Particularize a symbolic tensor
         syms t;
         syms theta(t) phi(t) xi(t);
         assume([in(t, 'real'), in(theta(t), 'real'), in(phi(t), 'real'),in(xi(t), 'real')]);    
-        A = point([cos(theta),sin(theta)+xi^2*sin(phi),xi*cos(phi)]); 
+        A = point(tensor([cos(theta),sin(theta)+xi^2*sin(phi),xi*cos(phi)])); 
 
         B = A.subs({t,theta,phi,xi},{1,t^2-4,2*t+3,-2}); % call with cell arrays
         B = A.subs([t,theta,phi,xi],[1,t^2-4,2*t+3,-2]); % call with arrays
@@ -84,7 +82,7 @@ end
   
 function test_plot(~) % tensor plotting 
     import anakin.*
-    A = point([1,5,3]); 
+    A = point(tensor([1,5,3])); 
     
     f = figure;
     A.plot;

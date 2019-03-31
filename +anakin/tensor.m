@@ -10,7 +10,7 @@ them only operate on tensors of a particular order, however.
 
 SYNTAX:
 T0 = anakin.tensor();  % returns default object 
-T  = anakin.tensor(T|c,<B1>);
+T  = anakin.tensor(<T|c>,<B1>);
 where: 
 - <> denotes optional arguments
 - | denotes alternative arguments
@@ -40,28 +40,23 @@ METHODS:
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
 %}
-classdef tensor 
+classdef tensor
     properties (Hidden = true, Access = protected) 
         c = 0; % components in the canonical vector basis
     end 
     methods % creation
-        function T = tensor(c,B) % constructor 
+        function T = tensor(c,B) % constructor
             % components
             if ~exist('c','var')
                 c = 0; % default tensor
             elseif isa(c,'anakin.tensor')
-                c = c.c;
+                c = c.c; 
             elseif isa(c,'anakin.point')
-                c = c.pos.c;
-            elseif isa(c,'anakin.frame')
-                c = c.origin.pos.c;
+                c = c.pos.c; 
             end 
             T.c = c;
             % change of basis
-            if exist('B','var')  
-                if isa(B,'anakin.frame')
-                    B = B.basis; % extract basis
-                end
+            if exist('B','var')   
                 for i = 1:T.ndims
                     T.c = anakin.utilities.product(T.c,B.matrix,[1,T.ndims+2]);
                 end 
@@ -82,6 +77,8 @@ classdef tensor
             T.c = reshape(value,[sc_,1,1]); % remove any singleton dimensions that may exist 
             try
                 T.c = double(T.c);
+            catch
+                % pass
             end
         end
     end
@@ -96,7 +93,7 @@ classdef tensor
                 end
             end
         end
-        function n = numel(T) % size of non-singleton dimensions
+        function n = numel(T) % number of elements
             n = numel(T.c); 
         end
         function n = ndims(T) % number of non-singleton dimensions 
@@ -236,13 +233,13 @@ classdef tensor
                 case 0
                     str = 'Scalar with value:';
                 case 1
-                    str = 'Vector with canonical components:';
+                    str = 'Vector with components:';
                 case 2
-                    str = 'Second-order tensor with canonical components:';
+                    str = 'Second-order tensor with components:';
                 case 3
-                    str = 'Third-order tensor with canonical components:';
+                    str = 'Third-order tensor with components:';
                 otherwise
-                    str = [num2str(T.ndims),'th-order tensor with canonical components:'];
+                    str = [num2str(T.ndims),'th-order tensor with components:'];
             end                    
             disp(str);
             disp(T.c);
@@ -255,10 +252,7 @@ classdef tensor
         end
         function c = components(T,B) % return components of T in basis B
             c = T.c; % if no basis is given, use the canonical vector basis
-            if exist('B','var')
-                if isa(B,'anakin.frame')
-                    B = B.basis; % extract basis
-                end
+            if exist('B','var') 
                 B = inv(B.matrix);
                 for idim = 1:T.ndims
                     c = anakin.utilities.product(c,B,[idim,T.ndims+2]);
@@ -284,9 +278,9 @@ classdef tensor
             T3 = anakin.tensor(anakin.utilities.product(T1.c,T2.c,varargin{:})); 
         end
         function dT = dt(T,B) % time derivative with respect to basis B. Requires symbolic tensor
-            if exist('B','var')
+            if exist('B','var') 
                 if isa(B,'anakin.frame')
-                    B = B.basis; % extract basis
+                    B = B.basis;
                 end
                 dT = anakin.tensor(diff(sym(T.components(B)),1),B);
             else
@@ -297,6 +291,8 @@ classdef tensor
             T.c = subs(T.c,variables,values);
             try
                 T.c = double(T.c);
+            catch
+                % pass
             end
         end        
     end    
