@@ -31,6 +31,7 @@ Mario Merino <mario.merino@uc3m.es>
 classdef point 
     properties (Hidden = true, Access = protected) 
         v anakin.tensor = anakin.tensor([0;0;0]); % canonical position vector
+        curr_vel0 = anakin.tensor([0;0;0]); % velocity vector
     end
     methods % creation
         function A = point(varargin) % constructor
@@ -45,7 +46,8 @@ classdef point
                     end                 
                 otherwise % other possibilities are not allowed
                     error('Wrong number of arguments in point');
-            end       
+            end
+            A.curr_vel0 = A.vel;      
         end 
         function A = set.v(A,value) % on setting v
             A.v = anakin.tensor(value);
@@ -91,6 +93,14 @@ classdef point
             end 
         end        
         function vel = vel(A,S1) % Returns the velocity vector of the point with respect to reference frame S1
+            c = A.v.components;
+            if(~isa(c(1), 'sym') && ~isa(c(2), 'sym') && ~isa(c(3), 'sym'))
+                vel = A.curr_vel0;
+                if exist('S1','var')
+                    % procedure to convert vel to reference frame S1
+                end
+                return;
+            end
             if exist('S1','var') % If no S1 is given, assume the canonical reference frame
                 r = A.pos(S1);
                 vel = r.dt(S1.basis); 
@@ -110,7 +120,8 @@ classdef point
         end
         function A_ = subs(A,variables,values) % Particularize symbolic point
             A_ = A;   
-            A_.v = A.v.subs(variables,values); 
+            A_.v = A.v.subs(variables,values);
+            A_.curr_vel0 = A.curr_vel0.subs(variables,values);
         end         
     end 
     methods % plotting

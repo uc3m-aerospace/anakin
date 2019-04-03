@@ -54,7 +54,8 @@ classdef particle < anakin.point
                     P.v = anakin.tensor(varargin{2});
                 otherwise % other possibilities are not allowed
                     error('Wrong number of arguments in particle');
-            end       
+            end
+            P.curr_vel0 = P.vel;       
         end  
         function P = set.M(P,value) % on setting M
             P.M = anakin.tensor(value); 
@@ -144,6 +145,7 @@ classdef particle < anakin.point
             P_ = P;
             P_.v = P.v.subs(variables,values);
             P_.M = P.M.subs(variables,values);
+            P_.curr_vel0 = P.curr_vel0.subs(variables,values);
         end
     end      
 end
