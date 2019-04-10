@@ -30,7 +30,7 @@ The `/problems` subdirectory includes live scripts that solve the problems
 of the course 'Mechanics Applied to Aerospace Engineering' of the BSc program
 in Aerospace Engineering at UC3M.
 
-To use Anakin, t is recommended that you first import the whole Anakin package with
+To use Anakin, it is recommended that you first import the whole Anakin package with
 
 ```Matlab
 import anakin.*
