@@ -22,6 +22,8 @@ required to use most of the functionality.
 Version R2018a or newer is recommended as it includes support for
 the example live scripts.
 
+Work is underway to port Anakin to Octave. If you would like to contribute on this line of work, please contact us.
+
 ## Quick usage guide
 
 Anakin documentation can be found in the `/docs` subdirectory. A live script describes
