@@ -14,7 +14,7 @@ where:
 - inertia is a 2nd order tensor with the tensor of inertia at the center of
   mass
 - S is a frame
-- A is a point (center of mass) 
+- A,B are points (center of mass) 
 - S1 is a frame. If given, all previous input as relative to that frame
 
 PROPERTIES:
