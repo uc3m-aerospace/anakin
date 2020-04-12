@@ -11,10 +11,10 @@ where:
 - () groups argument options
 - B0 is the default basis (canonical vector basis)
 - B  is a basis
-- m  is a matrix
+- m  is a square matrix (square array)
 - a is a vector (1st-order tensor)
 - c is an array with the three vector components 
-- q are quaternions (scalar last)
+- q are quaternions (with the scalar last)
 - axis is the unit vector of the axis of rotation
 - angle is angle of rotation about axis
 - B1 is a basis. If given, all previous input as relative to that basis
@@ -23,6 +23,12 @@ METHODS:
 * spacedim: returns dimensionality of space
 * matrix: transformation matrix to another basis 
 * e: returns the i-th vector of the basis
+* isisorthonormal: true if the transformation matrix is orthonormal
+* subs: takes values of the symbolic unknowns and returns a basis with
+  purely numeric matrix (symbolic variables must be used)    
+* plot: plots vectors of basis
+
+(three dimensional space only):
 * rotaxis, rotangle: returns unit vector and angle of rotation of B wrt
   B1 
 * quaternions: returns the quaternions with respect to another basis
@@ -30,20 +36,16 @@ METHODS:
   another basis
 * rotatex,rotatey,rotatez: create simply rotated frame about one
   coordinated axis of another basis
+* isrighthanded: true if the basis is right handed
 * omega, alpha: returns the angular velocity/acceleration vector omega
   with respect to another basis (symbolic variables must be used)
-* subs: takes values of the symbolic unknowns and returns a basis with
-  purely numeric matrix (symbolic variables must be used)    
-* isisorthonormal, isrighthanded: checks the corresponding property and
-  returns true or false  
-* plot: plots the basis with quiver, at a chosen position
 
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
 %}
 classdef basis
     properties (Hidden = true, Access = protected)        
-        m = [1,0,0;0,1,0;0,0,1]; % transformation matrix: [a(in B0)] = m * [a(in B)]. Or equivalently: the rotation matrix to go from B0 to B
+        m = [1,0,0;0,1,0;0,0,1]; % transformation matrix: [a(in B0)] = m * [a(in B)]. Or equivalently: the rotation matrix to go from B to B0
     end 
     methods % creation
         function B = basis(varargin) % constructor
@@ -64,16 +66,20 @@ classdef basis
                     if isa(varargin{end},'anakin.basis') 
                         if isa(varargin{1},'anakin.basis') % relative basis, basis
                             B.m = varargin{2}.m * varargin{1}.m; 
-                        elseif numel(varargin{1}) == 4 % relative quaternions, basis
+                        elseif length(varargin{1}) == 4 % relative quaternions, basis
                             qq = varargin{1}; % quaternions with the scalar component last
                             mm = [qq(4)^2+qq(1)^2-qq(2)^2-qq(3)^2,     2*(qq(1)*qq(2)-qq(4)*qq(3)),     2*(qq(1)*qq(3)+qq(4)*qq(2)); % matrix whose columns are the components of the ijk vectors of B expressed in B1
                                       2*(qq(1)*qq(2)+qq(4)*qq(3)), qq(4)^2-qq(1)^2+qq(2)^2-qq(3)^2,     2*(qq(2)*qq(3)-qq(4)*qq(1));
                                       2*(qq(1)*qq(3)-qq(4)*qq(2)),     2*(qq(2)*qq(3)+qq(4)*qq(1)), qq(4)^2-qq(1)^2-qq(2)^2+qq(3)^2];
                             B.m = varargin{2}.m * mm;
                         else % relative matrix, basis
-                            B.m = varargin{2}.m * varargin{1};
+                            if ismatrix(varargin{1}) && length(varargin{1}(:,1)) == length(varargin{1}(1,:))
+                                B.m = varargin{2}.m * varargin{1};
+                            else
+                                error('The matrix is not square')
+                            end
                         end
-                    else % relative matrix, basis
+                    else 
                         B.m = anakin.basis(varargin{1},varargin{2},anakin.basis).m; 
                     end 
                 case 3 
@@ -120,34 +126,7 @@ classdef basis
         end
         function value = ne(B1,B2) % overload ~=
             value = ~eq(B1,B2);
-        end
-        function B3 = mtimes(B1,B2) % overloaded * (multiplication of two rotation matrices)
-            B1 = anakin.basis(B1); % ensure basis
-            B2 = anakin.basis(B2);
-            B3 = anakin.basis(B1.m * B2.m);
         end 
-        function B3 = mrdivide(B1,B2) % overloaded /
-            B1 = anakin.basis(B1); % ensure basis
-            B2 = anakin.basis(B2);
-            B3 = anakin.basis(B1.m / B2.m);
-        end 
-        function B3 = mldivide(B1,B2) % overloaded \
-            B1 = anakin.basis(B1); % ensure basis
-            B2 = anakin.basis(B2);
-            B3 = anakin.basis(B1.m \ B2.m);
-        end 
-        function B1 = mpower(B1,exponent) % overloaded ^
-            B1.m = B1.m^exponent;
-        end 
-        function B1 = inv(B1) % overloaded inv
-            B1.m = inv(B1.m);
-        end 
-        function B1 = ctranspose(B1) % overloaded '
-            B1.m = B1.m';
-        end 
-        function B1 = transpose(B1) % overloaded .'
-            B1.m = B1.m.';
-        end  
         function disp(B) % display
             disp('Basis with rotation matrix:')
             disp(B.m)
@@ -185,6 +164,13 @@ classdef basis
                 B_.m = double(B_.m);
             catch
                 % pass
+            end
+        end
+        function h = plot(B,varargin) % plot vectors of basis
+            h = []; % initialize
+            for i = 1:B.spacedim
+                v = B.e(i);
+                h = [h; v.plot(varargin{:})]; %#ok<AGROW>
             end
         end
     end
@@ -266,21 +252,21 @@ classdef basis
             if B.spacedim ~= 3
                 error('This functionality is only available for bases in 3D space');
             end
-            Bx = B;
+            Bx = anakin.basis;
             Bx.m = B.m * [1,0,0;0,cos(angle),-sin(angle);0,sin(angle),cos(angle)];            
         end
         function By = rotatey(B,angle) % returns rotated basis about y axis of B by angle
             if B.spacedim ~= 3
                 error('This functionality is only available for bases in 3D space');
             end
-            By = B;
+            By = anakin.basis;
             By.m = B.m * [cos(angle),0,sin(angle);0,1,0;-sin(angle),0,cos(angle)];
         end
         function Bz = rotatez(B,angle) % returns rotated basis about z axis of B by angle
             if B.spacedim ~= 3
                 error('This functionality is only available for bases in 3D space');
             end
-            Bz = B;
+            Bz = anakin.basis;
             Bz.m = B.m * [cos(angle),-sin(angle),0;sin(angle),cos(angle),0;0,0,1];
         end                
         function isrighthanded = isrighthanded(B) % basis is righthanded
@@ -312,15 +298,5 @@ classdef basis
                 alpha = alpha - cross(B1.omega,B.omega) - B1.alpha; 
             end
         end         
-        function h = plot(B,varargin) % plot 3D basis. First argument in varargin must be the O vector, if any
-            if B.spacedim ~= 3
-                error('This functionality is only available for bases in 3D space');
-            end
-            h(B.spacedim) = 0; % allocate
-            for i = 1:B.spacedim
-                v = B.e(i);
-                h(i) = v.plot(varargin{:});
-            end
-        end
     end
 end

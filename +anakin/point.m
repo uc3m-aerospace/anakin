@@ -4,7 +4,7 @@ point: class to model a three-dimensional geometric point.
 
 SYNTAX:
 A0 = anakin.point();  % returns default object 
-A  = anakin.point(<A|a>,<S1>);
+A  = anakin.point(<A|a|c>,<S1>);
 where :
 - <> denotes optional arguments
 - | denotes alternative arguments
@@ -12,18 +12,20 @@ where :
 - A0 is the default point (origin)
 - A is a point 
 - a is a vector (1st-order tensor) 
+- c is an array with the Cartesian coordinates
 - S1 is a frame. If given, all previous input as relative to that frame
    
 METHODS:  
-* coordinates: returns the coordinates of A with respect to a reference
-  frame
+* coordinates: returns the Cartesian coordinates of A with respect to a
+  reference frame
+* x: retuns a specific Cartesian coordinate of A
+* displace: displace point by a vector
 * pos, vel, accel: return the position, velocity and acceleration vectors
   of the point with respect to a reference frame (symbolic variables must
-  be used in vel and accel)   
-* displace: displace point by a vector
+  be used to obtain vel and accel)   
 * subs: takes values of the symbolic unknowns and returns a point with
   purely numeric components (symbolic variables must be used)   
-* plot: plot a dot at point's position
+* plot: plot a marker at the point's position
 
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
@@ -39,9 +41,16 @@ classdef point
                     return;
                 case 1
                     if isa(varargin{1},'anakin.point')
-                        A.v = varargin{1}.v;
+                        A.v = anakin.tensor(varargin{1}.v.components);
                     else
                         A.v = anakin.tensor(varargin{1});
+                    end   
+                case 2 % frame at the end
+                    if isa(varargin{1},'anakin.point')
+                        A.v = anakin.tensor(varargin{2}.origin.v.components + varargin{2}.basis.matrix * varargin{1}.v.components);
+                    else
+                        temp = anakin.tensor(varargin{1});
+                        A.v = anakin.tensor(varargin{2}.origin.v.components + varargin{2}.basis.matrix * temp.components);
                     end                 
                 otherwise % other possibilities are not allowed
                     error('Wrong number of arguments in point');
@@ -111,9 +120,7 @@ classdef point
         function A_ = subs(A,variables,values) % Particularize symbolic point
             A_ = A;   
             A_.v = A.v.subs(variables,values); 
-        end         
-    end 
-    methods % plotting
+        end          
         function h = plot(A,varargin) % plot
             c = A.v.components; 
             h = line;

@@ -10,12 +10,13 @@ them only operate on tensors of a particular order, however.
 
 SYNTAX:
 T0 = anakin.tensor();  % returns default object 
-T  = anakin.tensor(<T|c>,<B1>);
+T  = anakin.tensor(<T|A|c>,<B1>);
 where: 
 - <> denotes optional arguments
 - | denotes alternative arguments
-- T0 is the default tensor (0)
+- T0 is the default tensor (scalar 0)
 - T is a tensor  
+- A is a point
 - c is an array with the tensor components 
 - B1 is a basis. If given, all previous input as relative to that basis
  
@@ -24,18 +25,25 @@ METHODS:
 * components: returns the components of the tensor in a chosen basis
 * x: returns a single component of the tensor in a chosen basis
 * product: general product of tensors (with or without contraction)
-* magnitude: returns norm (vector case)
-* unit: returns unit vector (vector case)
-* angle: returns angle between vectors (vector case)
-* isunitary: true if vector is unitary (vector case)
-* isperpendicular: true if vectors are perpendicular (vector case)
-* isparallel: true if vectors are parallel (vector case)
-* plot: plots vector (vector case)
-* ishermitian: true if tensor is hermitian (2nd-order tensor case)
+* isscalar: true if ndims == 0
+* isvector: true if ndims == 0
+* is2tensor: true if ndims == 2
 * dt: returns the time derivative of a tensor in a chosen basis
   (symbolic variables must be used)  
 * subs: takes values of the symbolic unknowns and returns a tensor with
   purely numeric components (symbolic variables must be used)   
+
+(for vectors only):
+* magnitude: returns norm
+* angle: returns angle between vectors
+* unit: returns unit vector
+* isunitary: true if vector is unitary
+* isperpendicular: true if vectors are perpendicular
+* isparallel: true if vectors are parallel
+* plot: plots vector. Use FileExchange arrow3 code if available
+
+(for 2nd order tensors only):
+* ishermitian: true if tensor is hermitian (2nd-order tensor case)
 
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
@@ -49,16 +57,16 @@ classdef tensor
             % components
             if ~exist('c','var')
                 c = 0; % default tensor
-            elseif isa(c,'anakin.tensor')
+            elseif isa(c,'anakin.tensor') % tensor input
                 c = c.c; 
-            elseif isa(c,'anakin.point')
+            elseif isa(c,'anakin.point') % point input
                 c = c.pos.c; 
             end 
             T.c = c;
             % change of basis
             if exist('B','var')   
                 for i = 1:T.ndims
-                    T.c = anakin.utilities.product(T.c,B.matrix,[1,T.ndims+2]);
+                    T.c = anakin.utilities.product(T.c,B.matrix,[i,T.ndims+2]);
                 end 
             end
         end
@@ -76,7 +84,7 @@ classdef tensor
             % Assign
             T.c = reshape(value,[sc_,1,1]); % remove any singleton dimensions that may exist 
             try
-                T.c = double(T.c);
+                T.c = double(T.c); % turn sym without variables into double
             catch
                 % pass
             end
@@ -277,9 +285,18 @@ classdef tensor
             if ~isa(T2,'anakin.tensor'); T2 = anakin.tensor(T2); end
             T3 = anakin.tensor(anakin.utilities.product(T1.c,T2.c,varargin{:})); 
         end
+        function isscalar = isscalar(T)
+            isscalar = (T.ndims == 0);
+        end
+        function isvector = isvector(T)
+            isvector = (T.ndims == 1);
+        end
+        function is2tensor = is2tensor(T)
+            is2tensor = (T.ndims == 2);
+        end
         function dT = dt(T,B) % time derivative with respect to basis B. Requires symbolic tensor
             if exist('B','var') 
-                if isa(B,'anakin.frame')
+                if isa(B,'anakin.frame') % frame input
                     B = B.basis;
                 end
                 dT = anakin.tensor(diff(sym(T.components(B)),1),B);
@@ -300,9 +317,6 @@ classdef tensor
         function magnitude = magnitude(T) % alias for norm 2
             magnitude = norm(T); 
         end
-        function unit = unit(T) % T divided by norm(T)
-            unit = T/norm(T);
-        end
         function angle = angle(T1,T2,T3) % angle between two vectors. A third one can be given to resolve sign
             if T1.ndims ~= 1 || T2.ndims ~= 1
                 error('This functionality is only available for vectors');
@@ -315,6 +329,9 @@ classdef tensor
                 angle.c = angle.c * sign(dot(cross(T1.c,T2.c),T3.c));
             end 
         end
+        function unit = unit(T) % T divided by norm(T)
+            unit = T/norm(T);
+        end 
         function isunitary = isunitary(T) % T has unit norm
             if isa(T.c,'sym') % symbolic inputs
                 isunitary = isAlways(norm(T.c)==1,'Unknown','false'); % In case of doubt, false
@@ -344,28 +361,31 @@ classdef tensor
             isparallel = all(isparallel);
         end
         function h = plot(T,varargin) % plot. First argument in varargin must be the O vector, if any
-            if T.ndims ~= 1 || T.spacedim ~= 3
-                error('This functionality is only available for vectors in 3D space');
-            end
+            if T.ndims ~= 1
+                error('This functionality is only available for vectors');
+            end 
+            cc = [T.c; zeros(3-T.spacedim,1)];
             if mod(nargin,2) == 1 % no origin vector is given
-                O = anakin.tensor([0;0;0]); % null vector
+                O = anakin.tensor([0;0;0]).c; % null vector
             else
                 if isa(varargin{1},'anakin.point')
-                    O = varargin{1}.pos;
+                    O = varargin{1}.pos.c;
                 else
-                    O = anakin.tensor(varargin{1});
-                end
-                if O.ndims ~= 1 || O.spacedim ~= 3
-                    error('This functionality is only available for vectors in 3D space');
-                end
-                varargin = varargin(2:end);
+                    O = anakin.tensor(varargin{1}).c;
+                end 
+                varargin = varargin(2:end); % rest of varargin
             end 
-            hold on
-            h = quiver3(O.x(1),O.x(2),O.x(3),T.x(1),T.x(2),T.x(3),0,'color','k');
-            hold off
-            if ~isempty(varargin)
-                set(h,varargin{:}); % set options stored in varargin
-            end
+            if exist('arrow3', 'file') % If Mathworks fileexchange arrow3 is available, use it
+                hold on
+                set(gca,'DataAspectRatio',[1,1,1]);
+                h = arrow3(O',O'+cc',varargin{:});
+                hold off
+            else 
+                h = line('XData',[O(1),O(1)+cc(1)],'YData',[O(2),O(2)+cc(2)],'ZData',[O(3),O(3)+cc(3)],'color','k'); 
+                if ~isempty(varargin)
+                    set(h,varargin{:}); % set options stored in varargin
+                end
+            end 
         end
     end
     methods % 2nd-order tensor functionality

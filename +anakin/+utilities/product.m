@@ -1,7 +1,7 @@
 %{
-product: a function to multiply two arrays together and performing
-arbitrary contractions. The resulting array indices are the free indices
-not contracted, in the same order as given.
+product: a function to multiply two arrays and perform arbitrary
+contractions. The resulting array indices are the free indices not
+contracted, in the same order as given. 
 
 T3 = anakin.utilities.product(T1,T2,<list1>,<list2>,...)
 
