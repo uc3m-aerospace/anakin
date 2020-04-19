@@ -34,27 +34,28 @@ classdef point
     properties (Hidden = true, Access = protected) 
         v anakin.tensor = anakin.tensor([0;0;0]); % canonical position vector
     end
-    methods % creation
-        function A = point(varargin) % constructor
-            switch nargin
-                case 0 % no arguments
-                    return;
-                case 1
-                    if isa(varargin{1},'anakin.point')
-                        A.v = anakin.tensor(varargin{1}.v.components);
-                    else
-                        A.v = anakin.tensor(varargin{1});
-                    end   
-                case 2 % frame at the end
-                    if isa(varargin{1},'anakin.point')
-                        A.v = anakin.tensor(varargin{2}.origin.v.components + varargin{2}.basis.matrix * varargin{1}.v.components);
-                    else
-                        temp = anakin.tensor(varargin{1});
-                        A.v = anakin.tensor(varargin{2}.origin.v.components + varargin{2}.basis.matrix * temp.components);
-                    end                 
-                otherwise % other possibilities are not allowed
-                    error('Wrong number of arguments in point');
-            end       
+    methods % creation 
+        function b = point(varargin) % constructor
+            if isempty(varargin) % Default
+                return;
+            elseif length(varargin) > 1 && isa(varargin{end},'anakin.frame') % Last argin is frame
+                S1 = varargin{end};
+                varargin = varargin(1:end-1); 
+            else % No frame is provided; use default
+                S1 = anakin.frame;
+            end 
+            b.v = S1.v; 
+            for i = 1:length(varargin) % later inputs overwrite former inputs
+                temp = varargin{i};        
+                if isa(temp,'anakin.point') % includes body, frame, particle as subclasses
+                    b.v = anakin.tensor(S1.v.components + temp.v.components(S1)); 
+                elseif isa(temp,'anakin.tensor')
+                    b.v = anakin.tensor(S1.v.components + temp.components(S1));
+                else % Array 
+                    v_ = anakin.tensor(temp);
+                    b.v = anakin.tensor(S1.v.components + v_.components(S1)); 
+                end
+            end 
         end 
         function A = set.v(A,value) % on setting v
             A.v = anakin.tensor(value);

@@ -67,24 +67,7 @@ function test_inertia(~) % Inertia
     mass = scalar(3);
 
     P = particle(mass,a);
-    i = P.inertia(S1); 
-end
-
-function test_eqs(~) % Equations
-    import anakin.*
-    if license('test','symbolic_toolbox') 
-        syms t;
-        syms theta(t) xi(t);
-        assume([in(t, 'real'), in(theta(t), 'real'), in(xi(t), 'real'),...
-                in(diff(theta(t),t), 'real'), in(diff(xi(t),t), 'real')]);    
-        c = formula([cos(theta);xi^2;xi]);  
-        a = tensor(c);
-        mass = scalar(3);
-        P = particle(mass,a);
-        P.forces = {tensor([1,1,xi])};
-        
-        eqs = P.equations; 
-    end
+    I = P.I(S1); 
 end
 
 function test_subs(~) % Particularize a symbolic vector

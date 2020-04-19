@@ -140,7 +140,7 @@ classdef basis
             if ~exist('B1','var')
                 matrix = B.m; % if no basis is given, use the canonical vector basis
             else
-                matrix = B1.m' * B.m;
+                matrix = B1.m \ B.m;
                 if isa(matrix,'sym')
                     matrix = formula(simplify(matrix));
                 end
@@ -183,7 +183,7 @@ classdef basis
                 B1 = anakin.basis(eye(B.spacedim)); % if no basis is given, use the canonical vector basis
             end
             mm = B.matrix(B1);
-            axis = anakin.tensor([mm(3,2)-mm(2,3);mm(1,3)-mm(3,1);mm(2,1)-mm(1,2)],B1).unit; % fails if rotation angle is 0 or 180 deg
+            axis = anakin.tensor([mm(3,2)-mm(2,3);mm(1,3)-mm(3,1);mm(2,1)-mm(1,2)],B1).unitvector; % fails if rotation angle is 0 or 180 deg
         end 
         function angle = rotangle(B,B1) % angle of rotation from B1
             if B.spacedim ~= 3
@@ -238,7 +238,7 @@ classdef basis
                 euler(2) = even * asin(dot(one.components,three.components));
                 two = -even * cross(one,three);
             end 
-            two = two.unit; % second rotation direction, normalized
+            two = two.unitvector; % second rotation direction, normalized
             temp0 = anakin.tensor(m0(:,type(2)));
             euler(1) = temp0.angle(two,one).components;
             euler(3) = two.angle(anakin.tensor(m3(:,type(2))),three).components; 

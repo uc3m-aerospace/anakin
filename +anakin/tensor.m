@@ -36,14 +36,17 @@ METHODS:
 (for vectors only):
 * magnitude: returns norm
 * angle: returns angle between vectors
-* unit: returns unit vector
-* isunitary: true if vector is unitary
+* unitvector: returns unit vector
+* isunitvector: true if vector is unit vector
 * isperpendicular: true if vectors are perpendicular
 * isparallel: true if vectors are parallel
 * plot: plots vector. Use FileExchange arrow3 code if available
 
 (for 2nd order tensors only):
-* ishermitian: true if tensor is hermitian (2nd-order tensor case)
+* ishermitian: true if tensor is hermitian
+* isantihermitian: true if tensor is antihermitian
+* isunitary: true if tensor is unitary
+* isnormal: true if tensor is normal
 
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
@@ -65,8 +68,9 @@ classdef tensor
             T.c = c;
             % change of basis
             if exist('B','var')   
+                Binv = inv(B.matrix);
                 for i = 1:T.ndims
-                    T.c = anakin.utilities.product(T.c,B.matrix,[i,T.ndims+2]);
+                    T.c = anakin.utilities.product(T.c,Binv,[1,T.ndims+1]);
                 end 
             end
         end
@@ -89,7 +93,7 @@ classdef tensor
                 % pass
             end
         end
-    end
+    end 
     methods (Hidden = true) % overloads
         function s = size(T) % size of non-singleton dimensions
             s = size(T.c); % size, padded with ones to the right
@@ -261,9 +265,9 @@ classdef tensor
         function c = components(T,B) % return components of T in basis B
             c = T.c; % if no basis is given, use the canonical vector basis
             if exist('B','var') 
-                B = inv(B.matrix);
+                Bm = anakin.basis(B).matrix;
                 for idim = 1:T.ndims
-                    c = anakin.utilities.product(c,B,[idim,T.ndims+2]);
+                    c = anakin.utilities.product(c,Bm,[1,T.ndims+1]);
                 end
                 if isa(c,'sym')
                     c = formula(simplify(c));
@@ -295,10 +299,7 @@ classdef tensor
             is2tensor = (T.ndims == 2);
         end
         function dT = dt(T,B) % time derivative with respect to basis B. Requires symbolic tensor
-            if exist('B','var') 
-                if isa(B,'anakin.frame') % frame input
-                    B = B.basis;
-                end
+            if exist('B','var')  
                 dT = anakin.tensor(diff(sym(T.components(B)),1),B);
             else
                 dT = anakin.tensor(diff(sym(T.components),1));
@@ -329,14 +330,14 @@ classdef tensor
                 angle.c = angle.c * sign(dot(cross(T1.c,T2.c),T3.c));
             end 
         end
-        function unit = unit(T) % T divided by norm(T)
-            unit = T/norm(T);
+        function unitvector = unitvector(T) % T divided by norm(T)
+            unitvector = T/norm(T);
         end 
-        function isunitary = isunitary(T) % T has unit norm
+        function isunitvector = isunitvector(T) % T has unit norm
             if isa(T.c,'sym') % symbolic inputs
-                isunitary = isAlways(norm(T.c)==1,'Unknown','false'); % In case of doubt, false
+                isunitvector = isAlways(norm(T.c)==1,'Unknown','false'); % In case of doubt, false
             else % numeric input            
-                isunitary = (abs(norm(T.c)-1)<eps(1)); 
+                isunitvector = (abs(norm(T.c)-1)<eps(1)); 
             end 
         end
         function isperpendicular = isperpendicular(T1,T2) % vectors are perpendicular
@@ -389,16 +390,49 @@ classdef tensor
         end
     end
     methods % 2nd-order tensor functionality
-        function ishermitian = ishermitian(T) % tensor is Hermitian (A' * A = eye)
+        function ishermitian = ishermitian(T) % tensor is Hermitian (A' == A)
             if T.ndims ~= 2
                 error('This functionality is only available for 2nd-order tensors');
             end
             if isa(T.c,'sym') % symbolic inputs
-                ishermitian = isAlways(T.c' - T.c,'Unknown','false'); % In case of doubt, false
+                ishermitian = isAlways(T.c' == T.c,'Unknown','false'); % In case of doubt, false
             else % numeric input            
                 ishermitian = (abs(T.c' - T.c) < eps(1)); 
             end 
             ishermitian = all(ishermitian(:));
+        end  
+        function isantihermitian = isantihermitian(T) % tensor is anti-Hermitian (A' == -A)
+            if T.ndims ~= 2
+                error('This functionality is only available for 2nd-order tensors');
+            end
+            if isa(T.c,'sym') % symbolic inputs
+                isantihermitian = isAlways(T.c' == -T.c,'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                isantihermitian = (abs(T.c' + T.c) < eps(1)); 
+            end 
+            isantihermitian = all(isantihermitian(:));
+        end  
+        function isunitary = isunitary(T) % tensor is Unitary (A' * A = eye)
+            if T.ndims ~= 2
+                error('This functionality is only available for 2nd-order tensors');
+            end
+            if isa(T.c,'sym') % symbolic inputs
+                isunitary = isAlways(T.c' * T.c == eye(T.spacedim,T.spacedim),'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                isunitary = (abs(T.c' * T.c - eye(T.spacedim,T.spacedim)) < eps(1)); 
+            end 
+            isunitary = all(isunitary(:));
+        end  
+        function isnormal= isnormal(T) % tensor is Normal (A' * A = A * A')
+            if T.ndims ~= 2
+                error('This functionality is only available for 2nd-order tensors');
+            end
+            if isa(T.c,'sym') % symbolic inputs
+                isnormal = isAlways(T.c' * T.c == T.c * T.c','Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                isnormal = (abs(T.c' * T.c - T.c * T.c') < eps(1)); 
+            end 
+            isnormal = all(isnormal(:));
         end  
     end 
 end

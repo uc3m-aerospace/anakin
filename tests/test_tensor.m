@@ -43,7 +43,7 @@ function test_creator(~) % Call creator
     
     % tensor
     assert(all(all(tensor(T).components == T))); % components in canonical tensor basis
-    assert(tensor(T,B1) == tensor(B1m*T*B1m')); % components in another basis
+    assert(tensor(T,B1) == tensor(B1m*T*inv(B1m))); % components in another basis
 end
 
 function test_creator_sym(~) % Call creator with sym arguments
@@ -69,7 +69,7 @@ function test_creator_sym(~) % Call creator with sym arguments
         
         % tensor
         assert(all(all(isAlways(tensor(T).components == formula(T))))); % components in canonical tensor basis
-        assert(tensor(T,B1) == tensor(B1m*T*B1m')); % components in another basis
+        assert(tensor(T,B1) == tensor(B1m*T*inv(B1m))); % components in another basis
     end
 end
 
@@ -93,7 +93,7 @@ function test_overloads(~) % overloads
     assert(norm(a) == sqrt(16.94));
     assert(cross(a,b) == tensor([-3.63,7.26,-3.63]));
     
-    assert(unit(a) == tensor([1.1,2.2,3.3]/sqrt(16.94)));
+    assert(unitvector(a) == tensor([1.1,2.2,3.3]/sqrt(16.94)));
     assert(magnitude(a) == sqrt(16.94));
     assert(angle(a,b) == acos(38.72/(sqrt(16.94)*sqrt(93.17))));
     assert(angle(a,b,cross(b,a)) == -acos(38.72/(sqrt(16.94)*sqrt(93.17))));
@@ -121,7 +121,7 @@ function test_overloads(~) % overloads
         assert(isAlways(norm(a) == sqrt(x1^2+y1^2+z1^2)));
         assert(cross(a,b) == tensor([y1*z2-z1*y2,z1*x2-x1*z2,x1*y2-y1*x2]));
        
-        assert(unit(a) == tensor([x1,y1,z1]/sqrt(x1^2+y1^2+z1^2)));
+        assert(unitvector(a) == tensor([x1,y1,z1]/sqrt(x1^2+y1^2+z1^2)));
         assert(isAlways(magnitude(a) == sqrt(x1^2+y1^2+z1^2)));
         aaa = dot(a,b)/(norm(a)*norm(b));
         assert(isAlways(angle(a,b) == acos(aaa.components)));
@@ -180,14 +180,21 @@ function test_isa(~) % isunitary, isparallel, isperpendicular...
         end
         c = 2*a; 
 
-        assert(isunitary(a)); 
-        assert(~isunitary(c)); 
+        assert(isunitvector(a)); 
+        assert(~isunitvector(c)); 
         assert(isperpendicular(a,b));
         assert(~isperpendicular(a,c));
         assert(~isparallel(a,b));
         assert(isparallel(a,c)); 
+        
         assert(ishermitian(T));
         assert(~ishermitian(T+[0,1,0;0,0,0;0,0,0]));
+        assert(~isantihermitian(T));
+        assert(isantihermitian(tensor([1i,0,0;0,0,0;0,0,0])));
+        assert(isunitary(tensor([0,1,0;1,0,0;0,0,1])));
+        assert(~isunitary(tensor([1,0,0;0,2,0;0,0,2])));
+        assert(isnormal(tensor([1,1,0;0,1,1;1,0,1])));
+        assert(~isnormal(tensor([1,1,1;0,1,1;0,0,1])));
     end
 end
 

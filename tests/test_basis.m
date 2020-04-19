@@ -80,11 +80,7 @@ function test_overloads(~)
 
         assert(B1~=B2)
         assert(B3==B3b)    
-        assert(B1*B2 == B3)
-        assert(inv(B1)\B2 == B3)
-        assert(B1/inv(B2) == B3)
-        assert(inv(B1) == B1')
-        assert(B1' == B1.')
+        assert(basis(B2,B1) == B3) 
     end
 end
 

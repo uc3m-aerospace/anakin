@@ -4,30 +4,24 @@ particle: class to model a point particle.
 
 SYNTAX:
 P0 = anakin.particle();  % returns default object  
-P  = anakin.particle(<P>|(<<mass>,A|a>),<S1>);
+P  = anakin.particle(<P>|(<mass>,<A|a|c>),<S1>);
 where:
 - <> denotes optional arguments
 - | denotes alternative arguments
 - P0 is the default particle (mass 1, located at the origin)
 - P  is a particle  
-- mass is a scalar
+- mass is a scalar or number
 - A is a point
 - a is a vector 
+- c is an array with the Cartesian coordinates of the origin
 - S1 is a frame. If given, all previous input as relative to that frame
-
-PROPERTIES:
-* mass: the mass of the particle
-* point: the point where the particle is
-* forces: a cell array with all the vector forces acting on the particle
-
+ 
 METHODS: 
 * mass: the mass of the particle
 * p: linear momentum in a given reference frame
 * H: angular momentum about a point in a given reference frame
 * T: kinetic energy in a given reference frame
-* equations: returns a vector of (symbolic) equations, m*a = F, projected
-  along the vectors of one basis
-* inertia: tensor of inertia about a point
+* I: tensor of inertia about a point
 * subs: takes values of the symbolic unknowns and returns a particle
   object which is purely numeric
 
@@ -37,39 +31,49 @@ Mario Merino <mario.merino@uc3m.es>
 classdef particle < anakin.point
     properties (Hidden = true, Access = protected)  
         M anakin.tensor = anakin.tensor(1); % mass of the object
-    end
-    properties
-        forces cell = {}; % cell array with all forces (vectors) acting on the object
-    end
-    methods % creation
-        function P = particle(varargin) % constructor
-            switch nargin
-                case 0 % no arguments
-                    return;
-                case 1 % particle                  
-                    P.M = varargin{1}.M; 
-                    P.v = varargin{1}.v; 
-                case 2 % mass, vector 
-                    P.M = anakin.tensor(varargin{1}); 
-                    P.v = anakin.tensor(varargin{2});
-                otherwise % other possibilities are not allowed
-                    error('Wrong number of arguments in particle');
-            end       
-        end  
+    end 
+    methods % creation 
+        function b = particle(varargin) % constructor
+            if isempty(varargin) % Default
+                return;
+            elseif length(varargin) > 1 && isa(varargin{end},'anakin.frame') % Last argin is frame
+                S1 = varargin{end};
+                varargin = varargin(1:end-1); 
+            else % No frame is provided; use default
+                S1 = anakin.frame;
+            end 
+            b.v = S1.v; 
+            for i = 1:length(varargin) % later inputs overwrite former inputs
+                temp = varargin{i};
+                if isa(temp,'anakin.body')
+                    b.M = temp.M;                    
+                    b.v = anakin.tensor(S1.v.components + temp.v.components(S1));  
+                elseif isa(temp,'anakin.particle')
+                    b.M = temp.M;
+                    b.v = anakin.tensor(S1.v.components + temp.v.components(S1));                    
+                elseif isa(temp,'anakin.point') % includes frame as a subclass
+                    b.v = anakin.tensor(S1.v.components + temp.v.components(S1)); 
+                elseif isa(temp,'anakin.tensor')
+                    if temp.ndims == 0 % assume it is M
+                        b.M = temp;
+                    elseif temp.ndims == 1 % assume it is v
+                        b.v = anakin.tensor(S1.v.components + temp.components(S1));
+                    else
+                        error('Cannot take tensors of order higher than 1 as inputs');
+                    end
+                else % Array
+                    if numel(temp) == 1 % assume it is M
+                        b.M = temp;
+                    else % assume it is v
+                        v_ = anakin.tensor(temp);
+                        b.v = anakin.tensor(S1.v.components + v_.components(S1));
+                    end
+                end
+            end 
+        end
         function P = set.M(P,value) % on setting M
             P.M = anakin.tensor(value); 
-        end
-        function P = set.forces(P,value) % on setting forces
-            if ~iscell(value) % ensure cell array
-                value = {value};
-            end
-            for j=1:length(value) % validate input
-                if ~isa(value{j},'anakin.tensor') 
-                    error('The forces must be supplied in a cell array of anakin.tensor vectors');
-                end
-            end
-            P.forces = value; 
-        end
+        end 
     end 
     methods (Hidden = true) % overloads
         function value = eq(P1,P2) % overload ==
@@ -100,45 +104,23 @@ classdef particle < anakin.point
             if ~exist('O','var')
                 O = anakin.point; % default point
             end
-            if exist('S1','var')
-                H = cross(P.pos-O.pos, P.p(S1));
-            else
-                H = cross(P.pos-O.pos, P.p);
-            end            
+            if ~exist('S1','var')
+                S1 = anakin.frame; % default frame
+            end 
+            H = cross(P.pos-O.pos, P.p(S1));         
         end
         function T = T(P,S1) % kinetic energy in S1
-            if exist('S1','var')
-                vel = P.vel(S1).components;
-            else
-                vel = P.vel.components;
-            end
-            T = (P.M/2) * norm(vel)^2; 
+            if ~exist('S1','var')
+                S1 = anakin.frame; % default frame
+            end 
+            T = (P.M/2) * norm(P.vel(S1))^2; 
         end
-        function inertia = inertia(P,O) % inertia tensor of the particle with respect to point O
-            if exist('O','var')
-                r = P.pos - O.pos;
-                inertia = P.M * (norm(r)^2 * anakin.tensor(eye(3)) - product(r,r));
-            else
-                inertia = anakin.tensor([0,0,0;0,0,0;0,0,0]); % no inertia about the particle itself
-            end            
-        end
-        function eqs = equations(P,B1) % returns vector of equations of motion projected in basis B1
-            p = P.p.dt;
-            F = anakin.tensor([0;0;0]); % allocate;
-            for i=1:length(P.forces)
-                F = F + P.forces{i};
+        function I = I(P,O) % inertia tensor of the particle with respect to point O in canonical vector basis
+            if ~exist('O','var')
+                O = anakin.point; % default point is the origin
             end
-            if ~exist('B1','var')
-                B1 = anakin.basis;
-            elseif isa(B1,'anakin.frame') 
-                B1 = B1.basis; % extract basis
-            end
-            eqs = sym([0;0;0]); % allocate
-            for i=1:3
-                p_ = p * B1.e(i);
-                F_ = F * B1.e(i);
-                eqs(i) = (p_.components == F_.components);
-            end                
+            r = P.v - O.v;
+            I = P.M * (norm(r)^2 * eye(3) - product(r,r));              
         end
         function P_ = subs(P,variables,values) % particularize symbolic particle
             P_ = P;
