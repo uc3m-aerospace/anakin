@@ -40,6 +40,11 @@ classdef body < anakin.frame
     properties (Hidden = true, Access = protected) 
         M anakin.tensor = anakin.tensor(1); % mass of the object
         I0 anakin.tensor = anakin.tensor([0,0,0;0,0,0;0,0,0]); % tensor of inertia of the body at the center of mass in the canonical vector basis
+        surface struct = struct('XData',[-1,-1,-1,-1,-1;-1,-1,-1,-1,-1;1,1,1,1,1;1,1,1,1,1],...
+                                'YData',[0,0,0,0,0;-1,1,1,-1,-1;-1,1,1,-1,-1;0,0,0,0,0],...
+                                'ZData',[0,0,0,0,0;-1,-1,1,1,-1;-1,-1,1,1,-1;0,0,0,0,0],...
+                                'CData',[0,0,0,0,0;0,0,0,0,0;0,0,0,0,0;0,0,0,0,0],...
+                                'LineStyle','none'); % get/set for the surface in the plotbody method
     end 
     methods % creation b  = anakin.body(<b|<<mass>,inertia>,S|(<A>,<B>)>,<S1>);
         function b = body(varargin) % constructor
@@ -95,10 +100,128 @@ classdef body < anakin.frame
         function b = set.M(b,value) % on setting M
             b.M = anakin.tensor(value); 
         end 
-        function b = set.I0(b,value) % on setting i
+        function b = set.I0(b,value) % on setting I0
             b.I0 = anakin.tensor(value); 
+        end          
+    end
+    methods (Static = true) % body creation methods
+        function b = sphere(M,R,O,B) % New sphere
+            if ~exist('M','var')
+                M = 1;
+            end
+            if ~exist('R','var')
+                R = 1;
+            end
+            if ~exist('O','var')
+                O = anakin.tensor;
+            end
+            if ~exist('B','var')
+                B = anakin.basis;
+            end
+            b = anakin.body;
+            b.M = M;
+            b.m = anakin.basis(B).matrix;
+            b.v = anakin.tensor(O);
+            b.I0 = anakin.tensor(eye(3)*2*M*R^2/5,b); 
+            phi = linspace(-pi/2,pi/2,50);
+            theta = linspace(-pi,pi,100);
+            [PHI,THETA] = meshgrid(phi,theta); 
+            b.surface = struct('XData',R*cos(PHI).*cos(THETA),...
+                               'YData',R*cos(PHI).*sin(THETA),...
+                               'ZData',R*sin(PHI),...
+                               'CData',PHI*0,...
+                               'LineStyle','none');
         end  
-    end 
+        function b = box(M,Lx,Ly,Lz,O,B) % New parallelepiped
+            if ~exist('M','var')
+                M = 1;
+            end
+            if ~exist('Lx','var')
+                Lx = 1;
+            end
+            if ~exist('Ly','var')
+                Ly = 1;
+            end
+            if ~exist('Lz','var')
+                Lz = 1;
+            end
+            if ~exist('O','var')
+                O = anakin.tensor;
+            end
+            if ~exist('B','var')
+                B = anakin.basis;
+            end
+            b = anakin.body;
+            b.M = M;
+            b.m = anakin.basis(B).matrix;
+            b.v = anakin.tensor(O);
+            b.I0 = anakin.tensor(M/12*[Ly^2+Lz^2,0,0;0,Lx^2+Lz^2,0;0,0,Lx^2+Ly^2],b); 
+            X = Lx/2*[-1,-1,-1,-1,-1;-1,-1,-1,-1,-1;1,1,1,1,1;1,1,1,1,1];
+            Y = Ly/2*[0,0,0,0,0;-1,1,1,-1,-1;-1,1,1,-1,-1;0,0,0,0,0];
+            Z = Lz/2*[0,0,0,0,0;-1,-1,1,1,-1;-1,-1,1,1,-1;0,0,0,0,0];  
+            b.surface = struct('XData',X,'YData',Y,'ZData',Z,'CData',X*0,...
+                               'LineStyle','none');
+        end  
+        function b = cylinder(M,R,Lz,O,B) % New cylinder along Z axis
+            if ~exist('M','var')
+                M = 1;
+            end
+            if ~exist('R','var')
+                R = 1;
+            end
+            if ~exist('Lz','var')
+                Lz = 1;
+            end 
+            if ~exist('O','var')
+                O = anakin.tensor;
+            end
+            if ~exist('B','var')
+                B = anakin.basis;
+            end
+            b = anakin.body;
+            b.M = M;
+            b.m = anakin.basis(B).matrix;
+            b.v = anakin.tensor(O);
+            b.I0 = anakin.tensor(M/12*[3*R^2+Lz^2,0,0;0,3*R^2+Lz^2,0;0,0,6*R^2],b); 
+            theta = linspace(-pi,pi,100);
+            z = [-1,1]*Lz/2;
+            [THETA,Z] = meshgrid(theta,z); 
+            X = [theta*0;R*cos(THETA);theta*0];
+            Y = [theta*0;R*sin(THETA);theta*0];
+            Z = [Z(1,:);Z;Z(2,:)];  
+            b.surface = struct('XData',X,'YData',Y,'ZData',Z,'CData',X*0,...
+                               'LineStyle','none');
+        end  
+        function b = cone(M,R,Lz,O,B) % New cone along Z axis
+            if ~exist('M','var')
+                M = 1;
+            end
+            if ~exist('R','var')
+                R = 1;
+            end
+            if ~exist('Lz','var')
+                Lz = 1;
+            end 
+            if ~exist('O','var')
+                O = anakin.tensor;
+            end
+            if ~exist('B','var')
+                B = anakin.basis;
+            end
+            b = anakin.body;
+            b.M = M;
+            b.m = anakin.basis(B).matrix;
+            b.v = anakin.tensor(O);
+            b.I0 = anakin.tensor(3*M/20*[R^2+Lz^2/4,0,0;0,R^2+Lz^2/4,0;0,0,2*R^2],b); 
+            theta = linspace(-pi,pi,100);
+            z = [-1,3]*Lz/4; 
+            X = [theta*0;R*cos(theta);theta*0];
+            Y = [theta*0;R*sin(theta);theta*0];
+            Z = [theta*0+z(1);theta*0+z(1);theta*0+z(2)];  
+            b.surface = struct('XData',X,'YData',Y,'ZData',Z,'CData',X*0,...
+                               'LineStyle','none');
+        end  
+    end
     methods (Hidden = true) % overloads
         function value = eq(b1,b2) % overload ==  
             I01 = anakin.tensor(b1.I0,b1.basis);
@@ -160,7 +283,7 @@ classdef body < anakin.frame
             r = b.v - O.v;
             I = b.I0 + b.M * (norm(r)^2 * eye(3) - product(r,r)); 
         end
-        function b_ = subs(b,variables,values) % particularize symbolic vector
+        function b_ = subs(b,variables,values) % particularize symbolic body
             b_ = b;
             b_.M = b.M.subs(variables,values);
             b_.I0 = b.I0.subs(variables,values);
@@ -171,6 +294,21 @@ classdef body < anakin.frame
             catch
                 % pass
             end
+        end
+        function h = plotbody(b,varargin) % Plots body surface (must not be symbolic)
+            % Translate and rotate surface object
+            X = b.surface.XData;
+            Y = b.surface.YData;
+            Z = b.surface.ZData;
+            for i = 1:length(X(:))
+                temp = b.coordinates + b.matrix * [X(i);Y(i);Z(i)];
+                X(i) = temp(1);
+                Y(i) = temp(2);
+                Z(i) = temp(3);
+            end
+            h = surface(b.surface); %#ok<CPROPLC>
+            set(h,'XData',X,'YData',Y,'ZData',Z);
+            set(h,varargin{:});           
         end
     end      
 end

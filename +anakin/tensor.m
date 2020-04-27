@@ -68,7 +68,7 @@ classdef tensor
             T.c = c;
             % change of basis
             if exist('B','var')   
-                Binv = inv(B.matrix);
+                Binv = inv(anakin.basis(B).matrix);
                 for i = 1:T.ndims
                     T.c = anakin.utilities.product(T.c,Binv,[1,T.ndims+1]);
                 end 
