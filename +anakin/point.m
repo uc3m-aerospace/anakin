@@ -3,17 +3,19 @@ DESCRIPTION:
 point: class to model a three-dimensional geometric point. 
 
 SYNTAX:
-A0 = anakin.point();  % returns default object 
-A  = anakin.point(<A|a|c>,<S1>);
+A = anakin.point();  % returns default object (origin of 3D space)
+A = anakin.point(...,<S1>); 
 where :
-- <> denotes optional arguments
-- | denotes alternative arguments
-- () groups argument options
-- A0 is the default point (origin)
+- <> denotes optional arguments  
 - A is a point 
-- a is a vector (1st-order tensor) 
-- c is an array with the Cartesian coordinates
-- S1 is a frame. If given, all previous input as relative to that frame
+- ... denotes a list of one or more of the following. Later inputs can
+  overwrite previous inputs:
+    - point object: denotes the origin point of the reference frame
+    - vector (1st-order tensor): denotes the origin point of the reference
+      frame 
+    - one dimensional array: denotes the origin point of the reference
+      frame 
+- S1 is a frame. If given, all previous inputs are relative to that frame
    
 METHODS:  
 * coordinates: returns the Cartesian coordinates of A with respect to a
@@ -31,8 +33,8 @@ AUTHOR:
 Mario Merino <mario.merino@uc3m.es>
 %}
 classdef point 
-    properties (Hidden = true, Access = protected) 
-        v anakin.tensor = anakin.tensor([0;0;0]); % canonical position vector
+    properties (Hidden = true)
+        r anakin.tensor = anakin.tensor([0;0;0]); % canonical position vector
     end
     methods % creation 
         function b = point(varargin) % constructor
@@ -44,26 +46,29 @@ classdef point
             else % No frame is provided; use default
                 S1 = anakin.frame;
             end 
-            b.v = S1.v; 
+            b.r = S1.r; 
             for i = 1:length(varargin) % later inputs overwrite former inputs
                 temp = varargin{i};        
                 if isa(temp,'anakin.point') % includes body, frame, particle as subclasses
-                    b.v = anakin.tensor(S1.v.components + temp.v.components(S1)); 
+                    b.r = anakin.tensor(S1.r.components + temp.r.components(S1)); 
                 elseif isa(temp,'anakin.tensor')
-                    b.v = anakin.tensor(S1.v.components + temp.components(S1));
+                    b.r = anakin.tensor(S1.r.components + temp.components(S1));
                 else % Array 
                     v_ = anakin.tensor(temp);
-                    b.v = anakin.tensor(S1.v.components + v_.components(S1)); 
+                    b.r = anakin.tensor(S1.r.components + v_.components(S1)); 
                 end
             end 
         end 
-        function A = set.v(A,value) % on setting v
-            A.v = anakin.tensor(value);
+        function A = set.r(A,value) % on setting r
+            A.r = anakin.tensor(value);
+            if A.r.ndims ~= 1
+                error('Point position must be a vector');
+            end
         end
     end 
     methods (Hidden = true) % overloads
         function value = eq(A1,A2) % overload ==
-            value = (A1.v == A2.v);
+            value = (A1.r == A2.r);
         end
         function value = ne(A1,A2) % overload =~
             value = ~eq(A1,A2);
@@ -91,13 +96,13 @@ classdef point
         end
         function A_ = displace(A,a) % returns displaced point by vector a
             A_ = A;
-            A_.v = A.v + a;
+            A_.r = A.r + a;
         end    
         function pos = pos(A,S1) % Returns the position vector of the point with respect to reference frame S1
             if exist('S1','var') % If no S1 is given, assume the canonical reference frame
-                pos = A.v - S1.v;
+                pos = A.r - S1.r;
             else
-                pos = A.v;
+                pos = A.r;
             end 
         end        
         function vel = vel(A,S1) % Returns the velocity vector of the point with respect to reference frame S1
@@ -120,15 +125,20 @@ classdef point
         end
         function A_ = subs(A,variables,values) % Particularize symbolic point
             A_ = A;   
-            A_.v = A.v.subs(variables,values); 
+            A_.r = A.r.subs(variables,values); 
         end          
         function h = plot(A,varargin) % plot
-            c = A.v.components; 
+            c = A.r.components; 
             h = line;
-            set(h,'XData',c(1),'YData',c(2),'ZData',c(3),'color','k','marker','.','linestyle','none');
-            if ~isempty(varargin)
-                set(h,varargin{:}); % set options stored in varargin
-            end
+            set(h,'XData',c(1),'YData',c(2),'ZData',c(3),'color','r','marker','.','linestyle','none');
+            for iv = 1:2:length(varargin)
+                try
+                    set(h,varargin{iv:iv+1});
+                catch
+                    % pass
+                end
+            end 
+            set(gca,'DataAspectRatio',[1,1,1]);
         end
     end 
 end

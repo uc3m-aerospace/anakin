@@ -9,16 +9,16 @@ Many Matlab array functions have been overloaded for convenience. Some of
 them only operate on tensors of a particular order, however.
 
 SYNTAX:
-T0 = anakin.tensor();  % returns default object 
-T  = anakin.tensor(<T|A|c>,<B1>);
+T = anakin.tensor();  % returns default object (scalar 0)
+T = anakin.tensor(c,<B1>);
+T = anakin.tensor(T,<B1>);
+T = anakin.tensor(A,<B1>);
 where: 
-- <> denotes optional arguments
-- | denotes alternative arguments
-- T0 is the default tensor (scalar 0)
+- <> denotes optional argumentsts
+- c is an array with the tensor components 
 - T is a tensor  
 - A is a point
-- c is an array with the tensor components 
-- B1 is a basis. If given, all previous input as relative to that basis
+- B1 is a basis. If given, all previous inputs are relative to that basis
  
 METHODS:
 * spacedim: returns dimensionality of space
@@ -27,7 +27,7 @@ METHODS:
 * product: general product of tensors (with or without contraction)
 * isscalar: true if ndims == 0
 * isvector: true if ndims == 0
-* is2tensor: true if ndims == 2
+* issecondorder: true if ndims == 2
 * dt: returns the time derivative of a tensor in a chosen basis
   (symbolic variables must be used)  
 * subs: takes values of the symbolic unknowns and returns a tensor with
@@ -40,9 +40,11 @@ METHODS:
 * isunitvector: true if vector is unit vector
 * isperpendicular: true if vectors are perpendicular
 * isparallel: true if vectors are parallel
-* plot: plots vector. Use FileExchange arrow3 code if available
+* plot: plots vector. 
 
 (for 2nd order tensors only):
+* issymmetric: true if tensor is symmetric
+* isantisymmetric: true if tensor is antisymmetric
 * ishermitian: true if tensor is hermitian
 * isantihermitian: true if tensor is antihermitian
 * isunitary: true if tensor is unitary
@@ -52,7 +54,7 @@ AUTHOR:
 Mario Merino <mario.merino@uc3m.es>
 %}
 classdef tensor
-    properties (Hidden = true, Access = protected) 
+    properties (Hidden = true)
         c = 0; % components in the canonical vector basis
     end 
     methods % creation
@@ -112,8 +114,8 @@ classdef tensor
             n = length(size(T));
         end        
         function value = eq(T1,T2) % overload ==
-            if ~isa(T1,'anakin.tensor'); T1 = anakin.tensor(T1); end % ensure tensor
-            if ~isa(T2,'anakin.tensor'); T2 = anakin.tensor(T2); end
+            T1 = anakin.tensor(T1); % ensure tensor
+            T2 = anakin.tensor(T2); 
             if isa(T1.c,'sym') || isa(T2.c,'sym') % symbolic inputs
                 value = isAlways(T1.c==T2.c,'Unknown','false'); % In case of doubt, false
             else % numeric input            
@@ -230,11 +232,11 @@ classdef tensor
             T.c = norm(T.c);
         end
         function T3 = dot(T1,T2) % dot product
-            T3 = T1*T2;
+            T3 = anakin.tensor(anakin.tensor(T1)*anakin.tensor(T2));
         end      
         function T3 = cross(T1,T2) % cross product
-            if ~isa(T1,'anakin.tensor'); T1 = anakin.tensor(T1); end % ensure tensor
-            if ~isa(T2,'anakin.tensor'); T2 = anakin.tensor(T2); end
+            T1 = anakin.tensor(T1); % ensure tensor
+            T2 = anakin.tensor(T2);
             if T1.ndims ~= 1 || T2.ndims ~= 1 || T1.spacedim ~= 3 || T2.spacedim ~= 3
                 error('This functionality is only available for vectors in 3D space');
             end
@@ -295,8 +297,8 @@ classdef tensor
         function isvector = isvector(T)
             isvector = (T.ndims == 1);
         end
-        function is2tensor = is2tensor(T)
-            is2tensor = (T.ndims == 2);
+        function issecondorder = issecondorder(T)
+            issecondorder = (T.ndims == 2);
         end
         function dT = dt(T,B) % time derivative with respect to basis B. Requires symbolic tensor
             if exist('B','var')  
@@ -364,32 +366,79 @@ classdef tensor
         function h = plot(T,varargin) % plot. First argument in varargin must be the O vector, if any
             if T.ndims ~= 1
                 error('This functionality is only available for vectors');
-            end 
-            cc = [T.c; zeros(3-T.spacedim,1)];
-            if mod(nargin,2) == 1 % no origin vector is given
-                O = anakin.tensor([0;0;0]).c; % null vector
-            else
-                if isa(varargin{1},'anakin.point')
-                    O = varargin{1}.pos.c;
-                else
-                    O = anakin.tensor(varargin{1}).c;
-                end 
+            end
+            Cc = [T.c; zeros(3-T.spacedim,1)];
+            if ~isempty(varargin) && (isa(varargin{1},'anakin.point') || isa(varargin{1},'anakin.tensor') || isnumeric(varargin{1}))
+                Oc = [anakin.tensor(varargin{1}).c; zeros(3-T.spacedim,1)];
                 varargin = varargin(2:end); % rest of varargin
-            end 
-            if exist('arrow3', 'file') % If Mathworks fileexchange arrow3 is available, use it
-                hold on
-                set(gca,'DataAspectRatio',[1,1,1]);
-                h = arrow3(O',O'+cc',varargin{:});
-                hold off
             else 
-                h = line('XData',[O(1),O(1)+cc(1)],'YData',[O(2),O(2)+cc(2)],'ZData',[O(3),O(3)+cc(3)],'color','k'); 
-                if ~isempty(varargin)
-                    set(h,varargin{:}); % set options stored in varargin
+                Oc = [0;0;0]; % null vector 
+            end   
+            % Line
+            h(1,1) = line('XData',[Oc(1),Oc(1)+Cc(1)],'YData',[Oc(2),Oc(2)+Cc(2)],'ZData',[Oc(3),Oc(3)+Cc(3)],'color','k'); 
+            % Cone (surface)
+            C = anakin.tensor(Cc); 
+            if C.magnitude ~= 0 
+                Lz = 0.08;
+                R = 0.01;
+                z = [-1,0]*Lz; 
+                theta = linspace(-pi,pi,20);
+                X = [theta*0;R*cos(theta);theta*0];
+                Y = [theta*0;R*sin(theta);theta*0];
+                Z = [theta*0+z(1);theta*0+z(1);theta*0+z(2)];  
+
+                kk = C.unitvector;
+                ii = cross(kk,anakin.tensor([0,0,1])); 
+                if ii.magnitude == 0 % Try a different vector
+                    ii = cross(kk,anakin.tensor([1,0,0])); 
                 end
+                ii = ii.unitvector;
+                jj = cross(kk,ii);
+                B = anakin.basis(ii,jj,kk); % basis aligned with C vector
+                for i = 1:length(X(:))
+                    P = anakin.tensor([X(i);Y(i);Z(i)],B);
+                    X(i) = Oc(1)+Cc(1) + P.x(1);
+                    Y(i) = Oc(2)+Cc(2) + P.x(2);
+                    Z(i) = Oc(3)+Cc(3) + P.x(3);
+                end 
+                h(2,1) = surface('XData',X,'YData',Y,'ZData',Z,'FaceColor','k','LineStyle','none');
             end 
+            % Apply properties and fail silently
+            for ih = 1:length(h)
+                for iv = 1:2:length(varargin)
+                    try
+                        set(h(ih),varargin{iv:iv+1});
+                    catch
+                        % pass
+                    end
+                end 
+            end
+            set(gca,'DataAspectRatio',[1,1,1]);
         end
     end
-    methods % 2nd-order tensor functionality
+    methods % 2nd-order tensor functionality 
+        function issymmetric = issymmetric(T) % tensor is Symmetric (A.' == A)
+            if T.ndims ~= 2
+                error('This functionality is only available for 2nd-order tensors');
+            end
+            if isa(T.c,'sym') % symbolic inputs
+                issymmetric = isAlways(T.c.' == T.c,'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                issymmetric = (abs(T.c.' - T.c) < eps(1)); 
+            end 
+            issymmetric = all(issymmetric(:));
+        end  
+        function isantisymmetric = isantisymmetric(T) % tensor is anti-Hermitian (A.' == -A)
+            if T.ndims ~= 2
+                error('This functionality is only available for 2nd-order tensors');
+            end
+            if isa(T.c,'sym') % symbolic inputs
+                isantisymmetric = isAlways(T.c.' == -T.c,'Unknown','false'); % In case of doubt, false
+            else % numeric input            
+                isantisymmetric = (abs(T.c.' + T.c) < eps(1)); 
+            end 
+            isantisymmetric = all(isantisymmetric(:));
+        end
         function ishermitian = ishermitian(T) % tensor is Hermitian (A' == A)
             if T.ndims ~= 2
                 error('This functionality is only available for 2nd-order tensors');
@@ -411,7 +460,7 @@ classdef tensor
                 isantihermitian = (abs(T.c' + T.c) < eps(1)); 
             end 
             isantihermitian = all(isantihermitian(:));
-        end  
+        end 
         function isunitary = isunitary(T) % tensor is Unitary (A' * A = eye)
             if T.ndims ~= 2
                 error('This functionality is only available for 2nd-order tensors');

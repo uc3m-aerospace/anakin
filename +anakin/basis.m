@@ -3,21 +3,23 @@ DESCRIPTION:
 basis: class to define orthonormal, right-handed vector bases.
 
 SYNTAX:
-B0 = anakin.basis();  % returns default object 
-B  = anakin.basis(<B|m|((a|c),(a|c),(a|c))|q|(axis,angle)>,<B1>);
+B = anakin.basis();  % returns default object (canonical vector basis)
+B = anakin.basis(B,<B1>);
+B = anakin.basis(m,<B1>);
+B = anakin.basis(v,v,v,<B1>);
+B = anakin.basis(c,c,c,<B1>);
+B = anakin.basis(q,<B1>);
+B = anakin.basis(axis,angle,<B1>);
 where:
-- <> denotes optional arguments
-- | denotes alternative arguments
-- () groups argument options
-- B0 is the default basis (canonical vector basis)
+- <> denotes optional arguments 
 - B  is a basis
-- m  is a square matrix (square array)
-- a is a vector (1st-order tensor)
-- c is an array with the three vector components 
-- q are quaternions (with the scalar last)
+- m  is a square rotation matrix (square array)
+- v is a vector (1st-order tensor)
+- c is an array with the vector components 
+- q are quaternions (with the scalar last). Only used for 3D bases
 - axis is the unit vector of the axis of rotation
 - angle is angle of rotation about axis
-- B1 is a basis. If given, all previous input as relative to that basis
+- B1 is a basis. If given, all previous inputs are relative to that basis
 
 METHODS:
 * spacedim: returns dimensionality of space
@@ -44,7 +46,7 @@ AUTHOR:
 Mario Merino <mario.merino@uc3m.es>
 %}
 classdef basis
-    properties (Hidden = true, Access = protected)        
+    properties (Hidden = true)
         m = [1,0,0;0,1,0;0,0,1]; % transformation matrix: [a(in B0)] = m * [a(in B)]. Or equivalently: the rotation matrix to go from B to B0
     end 
     methods % creation
