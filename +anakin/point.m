@@ -108,7 +108,7 @@ classdef point
         function vel = vel(A,S1) % Returns the velocity vector of the point with respect to reference frame S1
             if exist('S1','var') % If no S1 is given, assume the canonical reference frame
                 r = A.pos(S1);
-                vel = r.dt(S1.basis); 
+                vel = r.dt(S1); 
             else
                 r = A.pos;
                 vel = r.dt; 
@@ -117,7 +117,7 @@ classdef point
         function accel = accel(A,S1) % Returns the  acceleration vector of the point with respect to reference frame S1
             if exist('S1','var') % If no S1 is given, assume the canonical reference frame
                 v = A.vel(S1);
-                accel = v.dt(S1.basis);
+                accel = v.dt(S1);
             else
                 v = A.vel;
                 accel = v.dt;
