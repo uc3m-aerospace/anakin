@@ -29,13 +29,15 @@ METHODS:
 * I: tensor of inertia about a point
 * subs: takes values of the symbolic unknowns and returns a particle
   object which is purely numeric
+* force_equation: returns the force equation projected along a desired
+  direction. Requires symbolic particle
 
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
 %}
 classdef particle < anakin.point
-    properties (Hidden = true)
-        mass anakin.tensor = anakin.tensor(1); % mass of the object
+    properties 
+        mass anakin.tensor = anakin.tensor(1); % mass of the object 
     end 
     methods % creation 
         function b = particle(varargin) % constructor
@@ -134,7 +136,17 @@ classdef particle < anakin.point
             P_.r = P.r.subs(variables,values);
             P_.mass = P.mass.subs(variables,values);
         end
-    end      
+    end    
+    methods % dynamics
+        function eq = force_equation(P,F,e,S) % force equation along direction e, assuming S is inertial. Requires symbolic particle
+            if ~exist('S','var')
+                S = anakin.frame; % default to canonical frame
+            end
+            lhs = P.p(S).dt(S)*e;
+            rhs = F*e; 
+            eq = sym(lhs.components - rhs.components); % expression equal to zero is the equation
+        end  
+    end
 end
 
 

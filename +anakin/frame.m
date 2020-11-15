@@ -25,6 +25,7 @@ METHODS:
 * subs: takes values of the symbolic unknowns and returns a reference frame with
   purely numeric origin point and basis matrix (symbolic variables must be used)     
 * plot: plots the reference frame
+* plotlabel: plots labels of the reference frame
 
 AUTHOR:
 Mario Merino <mario.merino@uc3m.es>
@@ -93,13 +94,22 @@ classdef frame < anakin.point & anakin.basis
                 S_.m = double(S_.m);
             catch
                 % pass
-            end
-            
+            end 
         end         
     end 
     methods % 3-dimensional-space functionality 
         function h = plot(S,varargin) % plot   
             h = [S.origin.plot(varargin{:});S.basis.plot(S.origin,varargin{:})];
+        end
+        function h = plotlabel(S,labels,labelpositions,varargin) % plot labels
+            if ~exist('labels','var') || isempty(labels)
+                labels = {'O','\mathbf i','\mathbf j','\mathbf k'}; % Default label values, adequeate up to spacedim = 3.
+            end
+            if ~exist('labelpositions','var') || isempty(labelpositions)
+                labelpositions = {'SE','SW','E','N'}; % Default position values, adequeate up to spacedim = 3.
+            end
+            h = plotlabel@anakin.point(S,labels{1},labelpositions{1},varargin{:});
+            h = [h, plotlabel@anakin.basis(S,labels(2:end),labelpositions(2:end),S,varargin{:})];
         end
     end 
 end

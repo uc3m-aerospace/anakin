@@ -29,6 +29,7 @@ METHODS:
 * subs: takes values of the symbolic unknowns and returns a basis with
   purely numeric matrix (symbolic variables must be used)    
 * plot: plots vectors of basis
+* plotlabel: plots labels of vectors of basis
 
 (three dimensional space only):
 * rotaxis, rotangle: returns unit vector and angle of rotation of B wrt
@@ -175,6 +176,19 @@ classdef basis
                 h = [h; v.plot(varargin{:})]; %#ok<AGROW>
             end
         end
+        function h = plotlabel(B,labels,labelpositions,varargin) % plot labels
+            if ~exist('labels','var') || isempty(labels)
+                labels = {'\mathbf i','\mathbf j','\mathbf k'}; % Default label values, adequeate up to spacedim = 3.
+            end
+            if ~exist('labelpositions','var') || isempty(labelpositions)
+                labelpositions = {'SW','E','N'}; % Default position values, adequeate up to spacedim = 3.
+            end
+            h(B.spacedim) = 0; % initialize
+            for i = 1:B.spacedim
+                v = B.e(i);
+                h(i) = v.plotlabel(labels{i},labelpositions{i},varargin{:});
+            end
+        end
     end
     methods % 3-dimensional-space functionality
         function axis = rotaxis(B,B1) % rotation axis unit vector from B1
@@ -265,11 +279,15 @@ classdef basis
             By.m = B.m * [cos(angle),0,sin(angle);0,1,0;-sin(angle),0,cos(angle)];
         end
         function Bz = rotatez(B,angle) % returns rotated basis about z axis of B by angle
-            if B.spacedim ~= 3
-                error('This functionality is only available for bases in 3D space');
+            if B.spacedim == 3 
+                Bz = anakin.basis;
+                Bz.m = B.m * [cos(angle),-sin(angle),0;sin(angle),cos(angle),0;0,0,1];
+            elseif B.spacedim == 2 % Allow for 2D cases, when z is perpendicular to the plane
+                Bz = anakin.basis;
+                Bz.m = B.m * [cos(angle),-sin(angle);sin(angle),cos(angle)];
+            else
+                error('This functionality is only available for bases in 2D and 3D space');
             end
-            Bz = anakin.basis;
-            Bz.m = B.m * [cos(angle),-sin(angle),0;sin(angle),cos(angle),0;0,0,1];
         end                
         function isrighthanded = isrighthanded(B) % basis is righthanded
             if B.spacedim ~= 3

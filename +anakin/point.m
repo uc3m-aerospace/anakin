@@ -28,6 +28,7 @@ METHODS:
 * subs: takes values of the symbolic unknowns and returns a point with
   purely numeric components (symbolic variables must be used)   
 * plot: plot a marker at the point's position
+* plotlabel: plots label of point
 
 AUTHOR: 
 Mario Merino <mario.merino@uc3m.es>
@@ -130,15 +131,57 @@ classdef point
         function h = plot(A,varargin) % plot
             c = A.r.components; 
             h = line;
-            set(h,'XData',c(1),'YData',c(2),'ZData',c(3),'color','r','marker','.','linestyle','none');
+            set(h,'XData',c(1),'YData',c(2),'ZData',c(3),'color','k','marker','.','markersize',5,'linestyle','none');
             for iv = 1:2:length(varargin)
                 try
                     set(h,varargin{iv:iv+1});
                 catch
                     % pass
                 end
-            end 
-            set(gca,'DataAspectRatio',[1,1,1]);
+            end  
+        end
+        function h = plotlabel(A,label,labelposition,varargin) % plot labels
+            c = A.r.components; 
+            h = text;
+            h.Position = c.';
+            h.Interpreter = 'latex'; 
+            h.String = ['$',label,'$'];
+            switch labelposition
+                case 'N'
+                    h.HorizontalAlignment = 'center';
+                    h.VerticalAlignment = 'bottom';
+                case 'NE'
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'bottom';
+                case 'E'
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'middle';
+                case 'SE'
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'top';
+                case 'S'
+                    h.HorizontalAlignment = 'center';
+                    h.VerticalAlignment = 'top';
+                case 'SW'
+                    h.HorizontalAlignment = 'right';
+                    h.VerticalAlignment = 'top';
+                case 'W'
+                    h.HorizontalAlignment = 'right';
+                    h.VerticalAlignment = 'middle';
+                case 'NW'
+                    h.HorizontalAlignment = 'right';
+                    h.VerticalAlignment = 'bottom';
+                otherwise % Default to SE
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'top';
+            end
+            for iv = 1:2:length(varargin)
+                try
+                    set(h,varargin{iv:iv+1});
+                catch
+                    % pass
+                end
+            end  
         end
     end 
 end

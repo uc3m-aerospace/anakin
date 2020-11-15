@@ -27,7 +27,7 @@ where:
  
 PROPERTIES
 * mass: mass of the rigid body
-* I0: tensor of inertia about the center of mass in the canonical vector
+* IG: tensor of inertia about the center of mass in the canonical vector
   basis
 * triangulation: triangulation object with the body geometry, used for
   plotting. 
@@ -37,10 +37,14 @@ METHODS:
 * H: angular momentum about a point in a given reference frame
 * T: kinetic energy in a given reference frame
 * equations: returns a vector of (symbolic) equations, m*a = F, dH/dt = M,
-  projected along the vectors of one basis
-* inertia: tensor of inertia about a point
+  projected along the vectors of one basis 
+* I: tensor of inertia about a point
 * subs: takes values of the symbolic unknowns and returns a particle
   object which is purely numeric
+* force_equation: returns the force equation projected along a desired
+  direction. Requires symbolic particle 
+* torque_equation: returns the torque equation about a point, projected
+  along a desired direction. Requires symbolic particle
 
 STATIC METHODS:
 * box, cylinder, sphere, cone: convenience methods for quick body creation
@@ -52,9 +56,11 @@ AUTHOR:
 Mario Merino <mario.merino@uc3m.es>
 %}
 classdef body < anakin.frame
-    properties (Hidden = true)
-        mass anakin.tensor = anakin.tensor(1); % mass of the object
-        I0 anakin.tensor = anakin.tensor([0,0,0;0,0,0;0,0,0]); % tensor of inertia of the body at the center of mass in the canonical vector basis        
+    properties
+        mass anakin.tensor = anakin.tensor(1); % mass of the object        
+        IG anakin.tensor = anakin.tensor([1,0,0;0,1,0;0,0,1]); % tensor of inertia of the body at the center of mass in the canonical vector basis 
+    end
+    properties (Hidden = true) 
         triangulation triangulation = anakin.triangulations.box; % Triangulation of the rigid body geometry with external pointing normals
     end 
     methods % creation b  = anakin.body(<b|<<mass>,inertia>,S|(<A>,<B>)>,<S1>);
@@ -73,7 +79,7 @@ classdef body < anakin.frame
                 temp = varargin{i};
                 if isa(temp,'anakin.body')
                     b.mass = temp.mass;
-                    b.I0 = anakin.tensor(temp.I0,S1);
+                    b.IG = anakin.tensor(temp.IG,S1);
                     b.r = anakin.tensor(S1.r.components + S1.m * temp.r.components);
                     b.m = temp.matrix(S1);
                     b.triangulation = temp.triangulation;
@@ -92,8 +98,8 @@ classdef body < anakin.frame
                         b.mass = temp;
                     elseif temp.ndims == 1 % assume it is r
                         b.r = anakin.tensor(S1.r.components + S1.m * temp.components);
-                    elseif temp.ndims == 2 % assume it is I0
-                        b.I0 = anakin.tensor(temp.components,S1);
+                    elseif temp.ndims == 2 % assume it is IG
+                        b.IG = anakin.tensor(temp.components,S1);
                     else
                         error('Cannot take tensors of order higher than 2 as inputs');
                     end
@@ -105,8 +111,8 @@ classdef body < anakin.frame
                         b.mass = v_;
                     elseif v_.ndims == 1 % assume it is r
                         b.r = anakin.tensor(S1.r.components + S1.m * v_.components);
-                    elseif v_.ndims == 2 % assume it is I0
-                        b.I0 = anakin.tensor(v_.components,S1);
+                    elseif v_.ndims == 2 % assume it is IG
+                        b.IG = anakin.tensor(v_.components,S1);
                     else
                         error('Cannot take arrays of order higher than 2 as inputs');
                     end 
@@ -119,18 +125,18 @@ classdef body < anakin.frame
                 error('Mass must be a scalar');
             end
         end 
-        function b = set.I0(b,value) % on setting I0
-            b.I0 = anakin.tensor(value); 
-            if b.I0.ndims ~= 2
-                error('Mass must be a scalar');
+        function b = set.IG(b,value) % on setting IG
+            b.IG = anakin.tensor(value); 
+            if b.IG.ndims ~= 2
+                error('Inertia tensor must be given as a matrix');
             end
         end
     end
     methods (Hidden = true) % overloads
-        function value = eq(b1,b2) % overload ==. Compares only r, mass, I0.  
-            I01 = b1.I0;
-            I02 = b2.I0; 
-            value = (b1.mass == b2.mass) && (I01 == I02) && (b1.r == b2.r);
+        function value = eq(b1,b2) % overload ==. Compares only r, mass, IG.  
+            IG1 = b1.IG;
+            IG2 = b2.IG; 
+            value = (b1.mass == b2.mass) && (IG1 == IG2) && (b1.r == b2.r);
         end
         function value = ne(b1,b2) % overload =~
             value = ~eq(b1,b2);
@@ -139,7 +145,7 @@ classdef body < anakin.frame
             disp('Rigid body with mass:')
             disp(b.mass.components)      
             disp('Inertia tensor at the center of mass in body basis:')
-            I = b.I0.components(b);
+            I = b.IG.components(b);
             try
                 I = double(I);
             catch
@@ -167,7 +173,7 @@ classdef body < anakin.frame
             if ~exist('R','var')
                 R = 1;
             end 
-            b.I0 = anakin.tensor(eye(3)*2*b.mass*R^2/5,b); 
+            b.IG = anakin.tensor(eye(3)*2*b.mass*R^2/5,b); 
             b.triangulation = anakin.triangulations.sphere(R,varargin{:});
         end  
         function b = box(mass,O,B,Lx,Ly,Lz,varargin) % New parallelepiped
@@ -190,7 +196,7 @@ classdef body < anakin.frame
             if ~exist('Lz','var')
                 Lz = 1;
             end
-            b.I0 = anakin.tensor(b.mass/12*[Ly^2+Lz^2,0,0;0,Lx^2+Lz^2,0;0,0,Lx^2+Ly^2],b);  
+            b.IG = anakin.tensor(b.mass/12*[Ly^2+Lz^2,0,0;0,Lx^2+Lz^2,0;0,0,Lx^2+Ly^2],b);  
             b.triangulation = anakin.triangulations.box(Lx,Ly,Lz,varargin{:}); 
         end  
         function b = cylinder(mass,O,B,R,Lz,varargin) % New cylinder along Z axis
@@ -210,7 +216,7 @@ classdef body < anakin.frame
             if ~exist('Lz','var')
                 Lz = 1;
             end 
-            b.I0 = anakin.tensor(b.mass/12*[3*R^2+Lz^2,0,0;0,3*R^2+Lz^2,0;0,0,6*R^2],b); 
+            b.IG = anakin.tensor(b.mass/12*[3*R^2+Lz^2,0,0;0,3*R^2+Lz^2,0;0,0,6*R^2],b); 
             b.triangulation = anakin.triangulations.prism(R,Lz,varargin{:});
         end  
         function b = cone(mass,O,B,R,Lz,varargin) % New cone along Z axis
@@ -230,7 +236,7 @@ classdef body < anakin.frame
             if ~exist('Lz','var')
                 Lz = 1;
             end  
-            b.I0 = anakin.tensor(3*b.mass/20*[R^2+Lz^2/4,0,0;0,R^2+Lz^2/4,0;0,0,2*R^2],b); 
+            b.IG = anakin.tensor(3*b.mass/20*[R^2+Lz^2/4,0,0;0,R^2+Lz^2/4,0;0,0,2*R^2],b); 
             b.triangulation = anakin.triangulations.pyramid(R,Lz,varargin{:});
         end  
     end
@@ -249,7 +255,7 @@ classdef body < anakin.frame
             if ~exist('S1','var')
                 S1 = anakin.frame; % default frame
             end  
-            H = cross(b.pos-O.pos, b.p(S1)) + b.I0 * b.omega(S1); 
+            H = cross(b.pos-O.pos, b.p(S1)) + b.IG * b.omega(S1); 
         end
         function T = T(b,S1) % kinetic energy in S1
             if ~exist('S1','var')
@@ -257,19 +263,19 @@ classdef body < anakin.frame
             end  
             vel = b.vel(S1);
             omega = b.omega(S1);
-            T = b.mass * norm(vel)^2 / 2 + omega * b.I0 * omega / 2; 
+            T = b.mass * norm(vel)^2 / 2 + omega * b.IG * omega / 2; 
         end 
         function I = I(b,O) % inertia tensor of the body with respect to point O in canonical vector basis
             if ~exist('O','var')
                 O = anakin.point; % default point is the origin
             end
             r = b.r - O.r;
-            I = b.I0 + b.mass * (norm(r)^2 * eye(3) - product(r,r)); 
+            I = b.IG + b.mass * (norm(r)^2 * eye(3) - product(r,r)); 
         end
         function b_ = subs(b,variables,values) % particularize symbolic body
             b_ = b;
             b_.mass = b.mass.subs(variables,values);
-            b_.I0 = b.I0.subs(variables,values);
+            b_.IG = b.IG.subs(variables,values);
             b_.r = b.r.subs(variables,values); 
             b_.m = subs(b.m,variables,values);
             try
@@ -278,7 +284,7 @@ classdef body < anakin.frame
                 % pass
             end
         end
-        function h = plot(b,varargin) % Plots body surface
+        function h = plotbody(b,varargin) % Plots body surface
             % Translate and rotate surface object
             P = b.triangulation.Points;
             X = P(:,1);
@@ -302,10 +308,44 @@ classdef body < anakin.frame
                         % pass
                     end
                 end
-            end
-            set(gca,'DataAspectRatio',[1,1,1]);
+            end 
         end
     end      
+    methods % dynamics
+        function eq = force_equation(b,F,e,S) % force equation along direction e, assuming S is inertial. Requires symbolic body
+            if ~exist('S','var')
+                S = anakin.frame; % default to canonical frame
+            end
+            lhs = b.p(S).dt(S)*e;
+            rhs = F*e; 
+            eq = sym(lhs.components - rhs.components); % expression equal to zero is the equation
+        end  
+        function eq = torque_equation(b,A,MA,e,S) % force equation along direction e, assuming S is inertial. Requires symbolic body
+            if ~exist('S','var')
+                S = anakin.frame; % default to canonical frame
+            end
+            lhs = b.H(A,S).dt(S)*e;
+            rhs = (MA - cross(A.vel,b.p(S)))*e; 
+            eq = sym(lhs.components - rhs.components); % expression equal to zero is the equation
+        end  
+        function eqs = equations(b,F,A,MA,S) % The six equations for 3d bodies, assuming S is inertial. Requires symbolic body
+            if b.spacedim ~= 3
+                error('This functionality is only available for bodies in 3D space');
+            end
+            if ~exist('S','var')
+                S = anakin.frame; % default to canonical frame
+            end
+            eqs(6,1) = sym(0); % allocate
+            p = b.p(S);
+            dp = p.dt(S);            
+            dH = b.H(A,S).dt(S);
+            c = cross(A.vel,p);
+            for i = 1:3
+                eqs(i) = sym(dp.x(i,S) - F.x(i,S)); 
+                eqs(3+i) = sym(dH.x(i,S) + c.x(i,S) - MA.x(i,S));
+            end 
+        end
+    end
 end
 
 

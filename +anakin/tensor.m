@@ -41,6 +41,7 @@ METHODS:
 * isperpendicular: true if vectors are perpendicular
 * isparallel: true if vectors are parallel
 * plot: plots vector. 
+* plotlabel: plots label of vector
 
 (for 2nd order tensors only):
 * issymmetric: true if tensor is symmetric
@@ -376,6 +377,14 @@ classdef tensor
             end   
             % Line
             h(1,1) = line('XData',[Oc(1),Oc(1)+Cc(1)],'YData',[Oc(2),Oc(2)+Cc(2)],'ZData',[Oc(3),Oc(3)+Cc(3)],'color','k'); 
+            % Apply properties and fail silently 
+            for iv = 1:2:length(varargin)
+                try
+                    set(h(1,1),varargin{iv:iv+1});
+                catch
+                    % pass
+                end
+            end
             % Cone (surface)
             C = anakin.tensor(Cc); 
             if C.magnitude ~= 0 
@@ -401,10 +410,10 @@ classdef tensor
                     Y(i) = Oc(2)+Cc(2) + P.x(2);
                     Z(i) = Oc(3)+Cc(3) + P.x(3);
                 end 
-                h(2,1) = surface('XData',X,'YData',Y,'ZData',Z,'FaceColor','k','LineStyle','none');
+                h(2,1) = surface('XData',X,'YData',Y,'ZData',Z,'FaceColor',get(h(1,1),'Color'),'LineStyle','none');
             end 
             % Apply properties and fail silently
-            for ih = 1:length(h)
+            for ih = 2:length(h)
                 for iv = 1:2:length(varargin)
                     try
                         set(h(ih),varargin{iv:iv+1});
@@ -413,7 +422,64 @@ classdef tensor
                     end
                 end 
             end
-            set(gca,'DataAspectRatio',[1,1,1]);
+        end
+        function h = plotlabel(T,label,labelposition,varargin) % plot labels
+            if T.ndims ~= 1
+                error('This functionality is only available for vectors');
+            end
+            if ~exist('label','var')
+                label = '\mathbf v'; % default label
+            end
+            if ~exist('labelposition','var')
+                labelposition = 'SE'; % default position
+            end
+            Cc = [T.c; zeros(3-T.spacedim,1)];
+            if ~isempty(varargin) && (isa(varargin{1},'anakin.point') || isa(varargin{1},'anakin.tensor') || isnumeric(varargin{1}))
+                Cc = Cc + [anakin.tensor(varargin{1}).c; zeros(3-T.spacedim,1)];
+                varargin = varargin(2:end); % rest of varargin
+            end   
+            % Text
+            h = text;  
+            h.Position = Cc.';
+            h.Interpreter = 'latex'; 
+            h.String = ['$',label,'$'];            
+            switch labelposition
+                case 'N'
+                    h.HorizontalAlignment = 'center';
+                    h.VerticalAlignment = 'bottom';
+                case 'NE'
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'bottom';
+                case 'E'
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'middle';
+                case 'SE'
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'top';
+                case 'S'
+                    h.HorizontalAlignment = 'center';
+                    h.VerticalAlignment = 'top';
+                case 'SW'
+                    h.HorizontalAlignment = 'right';
+                    h.VerticalAlignment = 'top';
+                case 'W'
+                    h.HorizontalAlignment = 'right';
+                    h.VerticalAlignment = 'middle';
+                case 'NW'
+                    h.HorizontalAlignment = 'right';
+                    h.VerticalAlignment = 'bottom';
+                otherwise % Default to SE
+                    h.HorizontalAlignment = 'left';
+                    h.VerticalAlignment = 'top';
+            end
+            % Apply properties and fail silently 
+            for iv = 1:2:length(varargin)
+                try
+                    set(h,varargin{iv:iv+1});
+                catch
+                    % pass
+                end
+            end   
         end
     end
     methods % 2nd-order tensor functionality 
